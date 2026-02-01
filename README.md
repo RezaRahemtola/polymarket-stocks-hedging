@@ -1,7 +1,10 @@
 # Polymarket Stocks Hedging
 
+<img width="2974" height="2114" alt="image" src="https://github.com/user-attachments/assets/ae976126-0a1d-450f-8dde-376598d1f733" />
+
+
 Automatically find & invest in stocks hedging opportunities with Polymarket.\
-It allows you to buy NO shares on stock price prediction, effectively acting as an hedge against shares you might own in these companies.\
+It allows you to buy NO shares on stock price prediction, effectively acting as an hedge against shares you might own in these companies.
 
 Due to the inefficiencies of prediction markets (especially in these markets that have little liquidity), yields can be very attractive compared to stocks (20%+ APY on pretty safe scenarios is common, while the downside is minimal if you actually own shares of the companies you bet on).
 
@@ -145,3 +148,12 @@ npm start
 ```
 
 In production, the scanner runs automatically on the configured interval and redeems resolved positions.
+
+<div align="center">
+  <h2>Made with ❤️ by</h2>
+  <a href="https://github.com/RezaRahemtola">
+    <img src="https://github.com/RezaRahemtola.png?size=85" width=85/>
+    <br>
+    <span>Reza Rahemtola</span>
+  </a>
+</div>
