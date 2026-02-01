@@ -1,0 +1,24 @@
+{
+  "stocks": [
+    "GOOGL",
+    "AMZN"
+  ],
+  "opportunities": {
+    "minAPY": 25,
+    "minDisplayAPY": 8,
+    "minDeltaPercent": 7,
+    "slugPatterns": [
+      "{ticker}-above-on-*",
+      "what-price-will-{ticker}-hit-*"
+    ]
+  },
+  "scanner": {
+    "intervalMinutes": 5
+  },
+  "rejections": {
+    "softRejectHours": 24
+  },
+  "logging": {
+    "level": "info"
+  }
+}
