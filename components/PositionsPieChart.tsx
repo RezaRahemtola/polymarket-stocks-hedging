@@ -7,6 +7,7 @@ interface Position {
   image: string;
   value: number;
   outcome: string;
+  avgPrice: number;
 }
 
 interface Props {
@@ -26,7 +27,7 @@ const COLORS = [
   "#6366f1",
 ];
 
-export default function PositionsPieChart({ positions }: Props) {
+export default function PositionsPieChart({ positions }: Readonly<Props>) {
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
 
   const total = useMemo(
@@ -109,9 +110,9 @@ export default function PositionsPieChart({ positions }: Props) {
           )}
         </svg>
 
-        {/* Tooltip */}
+        {/* Tooltip - below chart, left-aligned */}
         {hoveredIndex !== null && (
-          <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 bg-popover border border-border rounded-lg p-2 shadow-lg z-10 whitespace-nowrap">
+          <div className="absolute top-full left-0 mt-2 bg-popover border border-border rounded-lg p-2 shadow-lg z-10 whitespace-nowrap">
             <p className="text-sm font-medium">
               {segments[hoveredIndex].title}
             </p>
@@ -120,6 +121,9 @@ export default function PositionsPieChart({ positions }: Props) {
             </p>
             <p className="text-sm font-mono text-primary">
               ${segments[hoveredIndex].value.toFixed(2)}
+            </p>
+            <p className="text-xs text-muted-foreground">
+              Avg: ${segments[hoveredIndex].avgPrice.toFixed(3)}
             </p>
           </div>
         )}

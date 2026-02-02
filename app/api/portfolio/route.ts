@@ -36,6 +36,7 @@ export async function GET() {
       image: p.icon || p.image || "",
       value: p.currentValue || 0,
       outcome: p.outcome || "",
+      avgPrice: p.avgPrice || 0,
     }));
 
     return NextResponse.json({

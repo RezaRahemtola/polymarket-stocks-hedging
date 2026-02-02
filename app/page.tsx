@@ -71,6 +71,7 @@ export default function Home() {
       image: string;
       value: number;
       outcome: string;
+      avgPrice: number;
     }[];
   }>({
     queryKey: ["portfolio"],
