@@ -1,6 +1,7 @@
 "use client";
 
 import ApproveModal from "@/components/ApproveModal";
+import LoginModal from "@/components/LoginModal";
 import PositionsPieChart from "@/components/PositionsPieChart";
 import RejectModal from "@/components/RejectModal";
 import { Button } from "@/components/ui/button";
@@ -36,6 +37,22 @@ export default function Home() {
   const [modalType, setModalType] = useState<"approve" | "reject" | null>(null);
   const [sortKey, setSortKey] = useState<SortKey>("score");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
+  const [showLoginModal, setShowLoginModal] = useState(false);
+
+  const { data: auth, refetch: refetchAuth } = useQuery<{ authenticated: boolean }>({
+    queryKey: ["auth"],
+    queryFn: async () => {
+      const res = await fetch("/api/auth");
+      return res.json();
+    },
+  });
+
+  const logoutMutation = useMutation({
+    mutationFn: async () => {
+      await fetch("/api/auth", { method: "DELETE" });
+    },
+    onSuccess: () => refetchAuth(),
+  });
 
   const { data: opportunities, isLoading } = useQuery<EventOpportunity[]>({
     queryKey: ["opportunities"],
@@ -140,12 +157,27 @@ export default function Home() {
         <h1 className="text-xl font-semibold flex items-center gap-2">
           Polymarket Opportunities
         </h1>
-        <Button
-          onClick={() => scanMutation.mutate()}
-          disabled={scanMutation.isPending}
-        >
-          {scanMutation.isPending ? "Scanning..." : "Scan Markets"}
-        </Button>
+        <div className="flex gap-2">
+          {auth?.authenticated ? (
+            <Button
+              variant="outline"
+              onClick={() => logoutMutation.mutate()}
+              disabled={logoutMutation.isPending}
+            >
+              Logout
+            </Button>
+          ) : (
+            <Button variant="outline" onClick={() => setShowLoginModal(true)}>
+              Login
+            </Button>
+          )}
+          <Button
+            onClick={() => scanMutation.mutate()}
+            disabled={scanMutation.isPending}
+          >
+            {scanMutation.isPending ? "Scanning..." : "Scan Markets"}
+          </Button>
+        </div>
       </div>
 
       {/* Stats */}
@@ -318,6 +350,10 @@ export default function Home() {
                         size="sm"
                         variant="default"
                         onClick={() => {
+                          if (!auth?.authenticated) {
+                            setShowLoginModal(true);
+                            return;
+                          }
                           setSelectedBracket({
                             bracket: b,
                             daysToExpiry: b.event.daysToExpiry,
@@ -369,6 +405,13 @@ export default function Home() {
             setModalType(null);
           }}
           onSuccess={refreshAfterTrade}
+        />
+      )}
+
+      {showLoginModal && (
+        <LoginModal
+          onClose={() => setShowLoginModal(false)}
+          onSuccess={() => refetchAuth()}
         />
       )}
     </div>

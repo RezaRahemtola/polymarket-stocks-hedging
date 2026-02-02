@@ -24,11 +24,9 @@ export interface Config {
   };
 }
 
-let configCache: Config | null = null;
 
 export function getConfig(): Config {
   // Only cache in production
-  if (configCache && process.env.NODE_ENV === "production") return configCache;
 
   const configPath = join(process.cwd(), "config", "config.json");
   const fileConfig = JSON.parse(readFileSync(configPath, "utf-8"));
@@ -53,6 +51,5 @@ export function getConfig(): Config {
     },
   };
 
-  configCache = config;
   return config;
 }

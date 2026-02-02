@@ -83,6 +83,11 @@ export default function ApproveModal({
           maxAmount: maxAmount ? parseFloat(maxAmount) : undefined,
         }),
       });
+      if (res.status === 401) {
+        setResult({ success: false, message: "Not authenticated - please login" });
+        setExecuting(false);
+        return;
+      }
       const data = await res.json();
       if (data.success) {
         setResult({

@@ -1,9 +1,16 @@
 import { NextResponse } from "next/server";
 import { executeTrade } from "@/lib/trade-client";
 import { saveTrade } from "@/lib/persistence";
+import { isAuthenticated } from "@/lib/auth";
 import { Trade } from "@/lib/types";
 
 export async function POST(request: Request) {
+  // Check authentication
+  if (!(await isAuthenticated())) {
+    console.log("[Trade] Error: Not authenticated");
+    return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+  }
+
   const { marketId, noTokenId, strikePrice, maxPrice, maxAmount } =
     await request.json();
 
