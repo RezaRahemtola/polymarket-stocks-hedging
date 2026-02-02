@@ -17,6 +17,10 @@ const outfit = Outfit({
 export const metadata = {
   title: "Polymarket Opportunities",
   description: "Find and trade market opportunities",
+  icons: {
+    icon: "/favicon.ico",
+    apple: "/apple-touch-icon.png",
+  },
 };
 
 export default function RootLayout({
