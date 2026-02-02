@@ -64,9 +64,7 @@ export default function LoginModal({ onClose, onSuccess }: Props) {
             />
           </div>
 
-          {error && (
-            <p className="text-sm text-red-500">{error}</p>
-          )}
+          {error && <p className="text-sm text-red-500">{error}</p>}
 
           <div className="flex gap-3 pt-2">
             <Button

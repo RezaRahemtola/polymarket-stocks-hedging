@@ -1,10 +1,10 @@
-import { readFileSync } from "fs";
-import { join } from "path";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 
 export interface Config {
   stocks: string[];
   opportunities: {
-    minAPY: number;
+    opportunityAPY: number;
     minDisplayAPY: number;
     minDeltaPercent: number;
     slugPatterns: string[];
@@ -15,6 +15,9 @@ export interface Config {
   rejections: {
     softRejectHours: number;
   };
+  logging: {
+    level: string;
+  };
   api: {
     gammaApiUrl: string;
     clobApiUrl: string;
@@ -23,7 +26,6 @@ export interface Config {
     funderAddress: string;
   };
 }
-
 
 export function getConfig(): Config {
   // Only cache in production
@@ -34,13 +36,14 @@ export function getConfig(): Config {
   const config: Config = {
     ...fileConfig,
     opportunities: {
-      minAPY: fileConfig.opportunities?.minAPY || 25,
+      opportunityAPY: fileConfig.opportunities?.opportunityAPY || 25,
       minDisplayAPY: fileConfig.opportunities?.minDisplayAPY || 5,
       minDeltaPercent: fileConfig.opportunities?.minDeltaPercent || 7,
       slugPatterns: fileConfig.opportunities?.slugPatterns || [],
     },
     scanner: fileConfig.scanner || { intervalMinutes: 5 },
     rejections: fileConfig.rejections || { softRejectHours: 24 },
+    logging: fileConfig.logging || { level: "info" },
     api: {
       gammaApiUrl:
         fileConfig.api?.gammaApiUrl || "https://gamma-api.polymarket.com",

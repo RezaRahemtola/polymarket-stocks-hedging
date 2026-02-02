@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import axios from "axios";
 import { getConfig } from "@/lib/config";
+import { logger } from "@/lib/logger";
 import { getBalance } from "@/lib/trade-client";
 
 interface PolymarketPosition {
@@ -31,9 +32,9 @@ export async function GET() {
     ]);
 
     // Filter to only positions with actual value (not resolved/empty)
-    const positions = ((positionsRes.data || []) as PolymarketPosition[]).filter(
-      (p) => p.currentValue > 0.01,
-    );
+    const positions = (
+      (positionsRes.data || []) as PolymarketPosition[]
+    ).filter((p) => p.currentValue > 0.01);
     const totalValue = positions.reduce(
       (sum, p) => sum + (p.currentValue || 0),
       0,
@@ -55,7 +56,7 @@ export async function GET() {
       positions: positionsByMarket,
     });
   } catch (err) {
-    console.error("[Portfolio] Error fetching:", err);
+    logger.error(`[Portfolio] Error fetching: ${err}`);
     return NextResponse.json({
       positionsValue: 0,
       balance: 0,

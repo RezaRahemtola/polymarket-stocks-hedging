@@ -2,24 +2,25 @@ import { NextResponse } from "next/server";
 import { executeTrade } from "@/lib/trade-client";
 import { saveTrade } from "@/lib/persistence";
 import { isAuthenticated } from "@/lib/auth";
+import { logger } from "@/lib/logger";
 import { Trade } from "@/lib/types";
 
 export async function POST(request: Request) {
   // Check authentication
   if (!(await isAuthenticated())) {
-    console.log("[Trade] Error: Not authenticated");
+    logger.warn("[Trade] Not authenticated");
     return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
   }
 
   const { marketId, noTokenId, strikePrice, maxPrice, maxAmount } =
     await request.json();
 
-  console.log(
+  logger.info(
     `[Trade] Executing: strike=$${strikePrice} maxPrice=${maxPrice} maxAmount=${maxAmount || "unlimited"}`,
   );
 
   if (!noTokenId || !maxPrice) {
-    console.log("[Trade] Error: Missing required fields");
+    logger.warn("[Trade] Missing required fields");
     return NextResponse.json(
       { error: "Missing required fields" },
       { status: 400 },
@@ -41,16 +42,16 @@ export async function POST(request: Request) {
         executedAt: Date.now(),
       };
       saveTrade(trade);
-      console.log(
+      logger.info(
         `[Trade] Success: ${result.sharesBought.toFixed(2)} shares @ $${result.avgPrice.toFixed(3)} = $${result.totalCost.toFixed(2)}`,
       );
     } else {
-      console.log("[Trade] Failed: No shares bought");
+      logger.info("[Trade] Failed: No shares bought");
     }
 
     return NextResponse.json(result);
   } catch (err) {
-    console.error("[Trade] Error:", err);
+    logger.error(`[Trade] Error: ${err}`);
     return NextResponse.json(
       { success: false, error: String(err) },
       { status: 500 },

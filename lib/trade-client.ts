@@ -1,12 +1,12 @@
 import {
+  AssetType,
   ClobClient,
   OrderType,
   Side,
-  AssetType,
-  type TickSize,
 } from "@polymarket/clob-client";
 import { Wallet } from "ethers";
 import { getConfig } from "./config";
+import { logger } from "./logger";
 import { Orderbook } from "./types";
 
 let clobClient: ClobClient | null = null;
@@ -57,9 +57,9 @@ export async function getBalance(): Promise<number> {
       asset_type: AssetType.COLLATERAL,
     });
     // USDC has 6 decimals
-    return parseFloat(balances?.balance || "0") / 1e6;
+    return Number.parseFloat(balances?.balance || "0") / 1e6;
   } catch (err) {
-    console.error("[Balance] Error:", err);
+    logger.error(`[Balance] Error: ${err}`);
     return 0;
   }
 }
@@ -79,7 +79,10 @@ export function calculateExecutionPreview(
   maxAmount?: number,
 ): ExecutionPreview {
   const asks = orderbook.asks
-    .map((a) => ({ price: parseFloat(a.price), size: parseFloat(a.size) }))
+    .map((a) => ({
+      price: Number.parseFloat(a.price),
+      size: Number.parseFloat(a.size),
+    }))
     .filter((a) => a.price <= maxPrice)
     .sort((a, b) => a.price - b.price);
 
@@ -130,7 +133,10 @@ export async function executeTrade(
   if (!orderbook) throw new Error("Failed to fetch orderbook");
 
   const asks = orderbook.asks
-    .map((a) => ({ price: parseFloat(a.price), size: parseFloat(a.size) }))
+    .map((a) => ({
+      price: Number.parseFloat(a.price),
+      size: Number.parseFloat(a.size),
+    }))
     .filter((a) => a.price <= maxPrice)
     .sort((a, b) => a.price - b.price);
 
@@ -158,12 +164,12 @@ export async function executeTrade(
     // Min order size is $1
     const orderCost = roundedPrice * shares;
     if (orderCost < 1) {
-      console.log(`[Trade] Skipping order: $${orderCost.toFixed(2)} < $1 min`);
+      logger.debug(`[Trade] Skipping order: $${orderCost.toFixed(2)} < $1 min`);
       continue;
     }
 
     try {
-      const tickSize = (await client.getTickSize(noTokenId)) as TickSize;
+      const tickSize = await client.getTickSize(noTokenId);
       const negRisk = await client.getNegRisk(noTokenId);
 
       const order = await client.createOrder(
@@ -179,7 +185,7 @@ export async function executeTrade(
 
       const result = await client.postOrder(order, OrderType.GTC);
       if (!result?.success) {
-        console.error("[Trade] Order rejected:", result);
+        logger.error(`[Trade] Order rejected: ${JSON.stringify(result)}`);
         continue;
       }
       totalShares += shares;
@@ -188,7 +194,7 @@ export async function executeTrade(
         remainingBudget -= orderCost;
       }
     } catch (err) {
-      console.error("Order failed:", err);
+      logger.error(`[Trade] Order failed: ${err}`);
     }
   }
 

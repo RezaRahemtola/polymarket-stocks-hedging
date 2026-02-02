@@ -40,7 +40,9 @@ export default function Home() {
   const [sortDir, setSortDir] = useState<SortDir>("desc");
   const [showLoginModal, setShowLoginModal] = useState(false);
 
-  const { data: auth, refetch: refetchAuth } = useQuery<{ authenticated: boolean }>({
+  const { data: auth, refetch: refetchAuth } = useQuery<{
+    authenticated: boolean;
+  }>({
     queryKey: ["auth"],
     queryFn: async () => {
       const res = await fetch("/api/auth");
@@ -170,7 +172,11 @@ export default function Home() {
               Logout
             </Button>
           ) : (
-            <Button variant="outline" onClick={() => setShowLoginModal(true)} className="flex-1 sm:flex-none">
+            <Button
+              variant="outline"
+              onClick={() => setShowLoginModal(true)}
+              className="flex-1 sm:flex-none"
+            >
               Login
             </Button>
           )}

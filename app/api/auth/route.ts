@@ -11,7 +11,7 @@ export async function POST(request: Request) {
   if (!correctPassword) {
     return NextResponse.json(
       { error: "TRADE_PASSWORD not configured" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 
@@ -33,7 +33,9 @@ export async function POST(request: Request) {
 export async function GET() {
   const cookieStore = await cookies();
   const authCookie = cookieStore.get(AUTH_COOKIE);
-  return NextResponse.json({ authenticated: authCookie?.value === "authenticated" });
+  return NextResponse.json({
+    authenticated: authCookie?.value === "authenticated",
+  });
 }
 
 export async function DELETE() {

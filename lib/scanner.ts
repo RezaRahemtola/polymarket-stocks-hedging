@@ -1,6 +1,6 @@
 import axios from "axios";
 import { getConfig } from "./config";
-import { EventOpportunity, BracketOpportunity } from "./types";
+import { BracketOpportunity, EventOpportunity } from "./types";
 
 interface PolymarketEvent {
   id: string;
@@ -111,8 +111,11 @@ function calculateAPY(noPrice: number, daysToExpiry: number): number {
   return (yieldPct / noPrice) * (365 / daysToExpiry) * 100;
 }
 
-function calculateMaxNoPrice(minAPY: number, daysToExpiry: number): number {
-  const factor = (minAPY * daysToExpiry) / 36500;
+function calculateMaxNoPrice(
+  opportunityAPY: number,
+  daysToExpiry: number,
+): number {
+  const factor = (opportunityAPY * daysToExpiry) / 36500;
   return 1 / (1 + factor);
 }
 
@@ -157,7 +160,7 @@ export async function runScanner(): Promise<EventOpportunity[]> {
         0.01,
       );
       const maxNoPrice = calculateMaxNoPrice(
-        config.opportunities.minAPY,
+        config.opportunities.opportunityAPY,
         daysToExpiry,
       );
 

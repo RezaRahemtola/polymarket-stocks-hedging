@@ -1,16 +1,16 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { BracketOpportunity } from "@/lib/types";
-import { ExecutionPreview } from "@/lib/trade-client";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { ExecutionPreview } from "@/lib/trade-client";
+import { BracketOpportunity } from "@/lib/types";
+import { useEffect, useState } from "react";
 
 interface Props {
   bracket: BracketOpportunity;
@@ -79,12 +79,15 @@ export default function ApproveModal({
           marketId: bracket.marketId,
           noTokenId: bracket.noTokenId,
           strikePrice: bracket.strikePrice,
-          maxPrice: parseFloat(maxPrice),
-          maxAmount: maxAmount ? parseFloat(maxAmount) : undefined,
+          maxPrice: Number.parseFloat(maxPrice),
+          maxAmount: maxAmount ? Number.parseFloat(maxAmount) : undefined,
         }),
       });
       if (res.status === 401) {
-        setResult({ success: false, message: "Not authenticated - please login" });
+        setResult({
+          success: false,
+          message: "Not authenticated - please login",
+        });
         setExecuting(false);
         return;
       }

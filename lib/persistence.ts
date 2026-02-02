@@ -1,5 +1,5 @@
-import { readFileSync, writeFileSync, existsSync, mkdirSync } from "fs";
-import { join } from "path";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { join } from "node:path";
 import { EventOpportunity, Rejection, Trade } from "./types";
 
 const DATA_DIR = join(process.cwd(), "data");

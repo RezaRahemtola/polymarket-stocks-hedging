@@ -3,6 +3,7 @@ import { Contract, Wallet, ethers, providers } from "ethers";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { getConfig } from "./config";
+import { logger } from "./logger";
 
 const CTF_ADDRESS = "0x4D97DCd97eC945f40cF65F87097ACe5EA0476045";
 const NEGRISK_ADAPTER_ADDRESS = "0xd91E80cF2E7be2e162c6513ceD06f1dD0dA35296";
@@ -73,12 +74,12 @@ export class PositionRedeemer {
       if (existsSync(this.pendingTxPath)) {
         const data = JSON.parse(readFileSync(this.pendingTxPath, "utf-8"));
         this.pendingRedemptions = data.pending || [];
-        console.log(
+        logger.info(
           `[Redeemer] Loaded ${this.pendingRedemptions.length} pending redemption(s)`,
         );
       }
     } catch {
-      console.warn("[Redeemer] Failed to load pending redemptions");
+      logger.warn("[Redeemer] Failed to load pending redemptions");
     }
   }
 
@@ -93,7 +94,7 @@ export class PositionRedeemer {
         JSON.stringify({ pending: this.pendingRedemptions }, null, 2),
       );
     } catch {
-      console.error("[Redeemer] Failed to save pending redemptions");
+      logger.error("[Redeemer] Failed to save pending redemptions");
     }
   }
 
@@ -121,11 +122,11 @@ export class PositionRedeemer {
           continue;
         }
         if (receipt.status === 1) {
-          console.log(
+          logger.info(
             `[Redeemer] Redeemed $${pending.position.currentValue} from ${pending.position.title}`,
           );
         } else {
-          console.warn(`[Redeemer] Tx failed: ${pending.txHash}`);
+          logger.warn(`[Redeemer] Tx failed: ${pending.txHash}`);
         }
       } catch {
         stillPending.push(pending);
@@ -322,7 +323,7 @@ export class PositionRedeemer {
 
       return { success: true, txHash: tx.hash, position };
     } catch (err) {
-      console.error(`[Redeemer] Failed to redeem: ${position.title}`, err);
+      logger.error(`[Redeemer] Failed to redeem: ${position.title}`, err);
       return { success: false };
     }
   }
@@ -334,7 +335,7 @@ export class PositionRedeemer {
       await this.checkPendingRedemptions();
 
       if (this.pendingRedemptions.length > 0) {
-        console.log(
+        logger.info(
           `[Redeemer] Skipping - ${this.pendingRedemptions.length} tx(s) pending`,
         );
         return;
@@ -377,7 +378,7 @@ export class PositionRedeemer {
         try {
           const receipt = await this.provider.getTransactionReceipt(txHash);
           if (!receipt) {
-            console.log(`[Redeemer] Tx pending: ${txHash}`);
+            logger.info(`[Redeemer] Tx pending: ${txHash}`);
             this.pendingRedemptions.push({
               txHash,
               position,
@@ -386,11 +387,11 @@ export class PositionRedeemer {
             continue;
           }
           if (receipt.status === 1) {
-            console.log(
+            logger.info(
               `[Redeemer] Redeemed $${position.currentValue} from ${position.title}`,
             );
           } else {
-            console.warn(`[Redeemer] Tx failed: ${txHash}`);
+            logger.warn(`[Redeemer] Tx failed: ${txHash}`);
           }
         } catch {
           this.pendingRedemptions.push({
@@ -405,7 +406,7 @@ export class PositionRedeemer {
         this.savePendingRedemptions();
       }
     } catch (err) {
-      console.error("[Redeemer] Error in redemption check", err);
+      logger.error("[Redeemer] Error in redemption check", err);
     }
   }
 }

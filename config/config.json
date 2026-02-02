@@ -1,16 +1,10 @@
 {
-  "stocks": [
-    "GOOGL",
-    "AMZN"
-  ],
+  "stocks": ["GOOGL", "AMZN"],
   "opportunities": {
-    "minAPY": 25,
+    "opportunityAPY": 25,
     "minDisplayAPY": 8,
     "minDeltaPercent": 7,
-    "slugPatterns": [
-      "{ticker}-above-on-*",
-      "what-price-will-{ticker}-hit-*"
-    ]
+    "slugPatterns": ["{ticker}-above-on-*", "what-price-will-{ticker}-hit-*"]
   },
   "scanner": {
     "intervalMinutes": 5

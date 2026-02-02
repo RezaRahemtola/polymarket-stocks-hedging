@@ -6,11 +6,17 @@
 
 [Polymarket](https://polymarket.com) offers prediction markets on stock prices, such as "Will GOOGL close above $200 by end of February?". These markets let you bet YES or NO on outcomes.
 
-**The opportunity**: By buying NO shares on price targets significantly above the current stock price, you're essentially betting the stock won't reach that price. If you're right, you get $1 per share at expiration. If you're wrong but own the actual stock, your stock gains offset the prediction market loss.
+### The opportunity
 
-**Why it works**: Prediction markets, especially low-liquidity ones, are often inefficient. You can frequently find 20-50%+ APY on relatively safe scenarios (e.g., betting a stock won't rise 30% in 2 weeks).
+By buying NO shares on price targets significantly above the current stock price, you're essentially betting the stock won't reach that price. If you're right, you get $1 per share at expiration. If you're wrong but own the actual stock, your stock gains offset the prediction market loss.
 
-**Example**: GOOGL is at $180. A market asks "Will GOOGL hit $250 by March?". NO shares cost $0.92. If GOOGL stays below $250, you profit $0.08/share (8.7% in a few weeks = high APY). If GOOGL somehow hits $250, you lose $0.92/share but your GOOGL stock gained ~39%.
+### Why it works
+
+Prediction markets, especially low-liquidity ones, are often inefficient. You can frequently find 20-50%+ APY on relatively safe scenarios (e.g., betting a stock won't rise 30% in 2 weeks).
+
+### Example
+
+GOOGL is at $180. A market asks "Will GOOGL hit $250 by March?". NO shares cost $0.92. If GOOGL stays below $250, you profit $0.08/share (8.7% in a few weeks = high APY). If GOOGL somehow hits $250, you lose $0.92/share but your GOOGL stock gained ~39%.
 
 This tool scans Polymarket for these opportunities, ranks them by attractiveness, and optionally lets you execute trades directly.
 
@@ -39,7 +45,7 @@ Edit `config/config.json`:
 {
   "stocks": ["GOOGL", "AMZN"],
   "opportunities": {
-    "minAPY": 25,
+    "opportunityAPY": 25,
     "minDisplayAPY": 8,
     "minDeltaPercent": 7
   }
@@ -49,9 +55,9 @@ Edit `config/config.json`:
 | Field             | Description                                            |
 | ----------------- | ------------------------------------------------------ |
 | `stocks`          | Stock tickers to scan for                              |
-| `minAPY`          | Minimum APY to flag as "opportunity" (green highlight) |
+| `opportunityAPY`  | Minimum APY to flag as "opportunity" (green highlight) |
 | `minDisplayAPY`   | APY cutoff - hide opportunities below this             |
-| `minDeltaPercent` | Minimum delta % from current stock price               |
+| `minDeltaPercent` | Delta (% from current stock price) cutoff              |
 
 ### 3. Run
 
@@ -88,8 +94,8 @@ Click **Login** in the app header and enter your `TRADE_PASSWORD` to enable trad
 ### Dashboard
 
 - **Positions**: Total value of open positions with count
-- **Available**: USDC balance available for trading
-- **Opportunities**: Count of opportunities meeting minAPY threshold
+- **Balance**: USDC balance available for trading
+- **Opportunities**: Count of opportunities meeting the `opportunityAPY` threshold
 
 ### Opportunities Table
 
@@ -116,6 +122,7 @@ Click column headers to sort. Columns:
 ### Skipping
 
 Click **Skip** to hide an opportunity:
+
 - **Snooze (24h)**: Reappears after 24 hours
 - **Dismiss Forever**: Permanently hidden
 
@@ -142,7 +149,8 @@ The app runs on port 50003 by default.
 
 ### VPN Setup (Optional)
 
-Required if your server is in a country where Polymarket is restricted (e.g., USA).
+Required to place orders if your server is in a country where Polymarket is restricted (e.g., France).\
+If you don't need it, remove the vpn service from the `docker-compose.yml` file & the references to it in the app service.
 
 #### Step 1: Get OpenVPN Configuration
 
@@ -180,6 +188,7 @@ your-openvpn-password
 Open `vpn/vpn.ovpn` and:
 
 1. Find `auth-user-pass` and change it to:
+
    ```
    auth-user-pass /vpn/vpn.auth
    ```
