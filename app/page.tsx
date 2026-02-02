@@ -405,7 +405,9 @@ export default function Home() {
             setSelectedBracket(null);
             setModalType(null);
           }}
-          onSuccess={refreshAfterTrade}
+          onSuccess={() => {
+            queryClient.invalidateQueries({ queryKey: ["opportunities"] });
+          }}
         />
       )}
 

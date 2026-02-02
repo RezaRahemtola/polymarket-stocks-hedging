@@ -26,6 +26,7 @@ export async function POST(request: Request) {
     return response;
   }
 
+  await new Promise((r) => setTimeout(r, 2000)); // 2s delay on failure
   return NextResponse.json({ error: "Invalid password" }, { status: 401 });
 }
 
