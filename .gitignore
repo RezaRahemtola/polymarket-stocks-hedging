@@ -8,3 +8,6 @@ logs/
 data/
 .next/
 .claude
+
+/vpn/vpn.ovpn
+/vpn/vpn.auth
