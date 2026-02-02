@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/table";
 import { BracketOpportunity, EventOpportunity } from "@/lib/types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import Image from "next/image";
 import { useMemo, useState } from "react";
 
 type SortKey =
@@ -146,7 +147,7 @@ export default function Home() {
     }
   };
 
-  const SortIcon = ({ k }: { k: SortKey }) =>
+  const renderSortIcon = (k: SortKey) =>
     sortKey === k ? (
       <span className="ml-1">{sortDir === "asc" ? "↑" : "↓"}</span>
     ) : null;
@@ -246,49 +247,49 @@ export default function Home() {
                   onClick={() => toggleSort("market")}
                 >
                   Market
-                  <SortIcon k="market" />
+                  {renderSortIcon("market")}
                 </TableHead>
                 <TableHead
                   className="text-right cursor-pointer select-none"
                   onClick={() => toggleSort("strike")}
                 >
                   Strike
-                  <SortIcon k="strike" />
+                  {renderSortIcon("strike")}
                 </TableHead>
                 <TableHead
                   className="text-right cursor-pointer select-none"
                   onClick={() => toggleSort("delta")}
                 >
                   Delta
-                  <SortIcon k="delta" />
+                  {renderSortIcon("delta")}
                 </TableHead>
                 <TableHead
                   className="text-right cursor-pointer select-none"
                   onClick={() => toggleSort("noPrice")}
                 >
                   NO Price
-                  <SortIcon k="noPrice" />
+                  {renderSortIcon("noPrice")}
                 </TableHead>
                 <TableHead
                   className="text-right cursor-pointer select-none"
                   onClick={() => toggleSort("apy")}
                 >
                   APY
-                  <SortIcon k="apy" />
+                  {renderSortIcon("apy")}
                 </TableHead>
                 <TableHead
                   className="text-center cursor-pointer select-none"
                   onClick={() => toggleSort("score")}
                 >
                   Score
-                  <SortIcon k="score" />
+                  {renderSortIcon("score")}
                 </TableHead>
                 <TableHead
                   className="text-right cursor-pointer select-none"
                   onClick={() => toggleSort("expires")}
                 >
                   Expires
-                  <SortIcon k="expires" />
+                  {renderSortIcon("expires")}
                 </TableHead>
                 <TableHead className="text-right"></TableHead>
               </TableRow>
@@ -307,10 +308,12 @@ export default function Home() {
                       className="flex items-center gap-3 hover:opacity-80 transition-opacity"
                     >
                       {b.event.eventImage && (
-                        <img
+                        <Image
                           src={b.event.eventImage}
                           alt=""
-                          className="w-10 h-10 rounded-lg object-cover flex-shrink-0"
+                          width={40}
+                          height={40}
+                          className="rounded-lg object-cover flex-shrink-0"
                         />
                       )}
                       <span className="font-medium">{b.event.eventTitle}</span>

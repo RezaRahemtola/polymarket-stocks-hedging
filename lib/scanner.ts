@@ -2,6 +2,31 @@ import axios from "axios";
 import { getConfig } from "./config";
 import { EventOpportunity, BracketOpportunity } from "./types";
 
+interface PolymarketEvent {
+  id: string;
+  title: string;
+  slug?: string;
+  image?: string;
+  endDate: string;
+  markets?: PolymarketMarket[];
+}
+
+interface PolymarketMarket {
+  id: string;
+  question?: string;
+  groupItemTitle?: string;
+  clobTokenIds?: string;
+}
+
+interface Orderbook {
+  asks?: { price: string; size: string }[];
+}
+
+interface ParsedAsk {
+  price: number;
+  size: number;
+}
+
 // Yahoo Finance
 async function getStockPrice(ticker: string): Promise<number | null> {
   try {
@@ -16,7 +41,7 @@ async function getStockPrice(ticker: string): Promise<number | null> {
 }
 
 // Polymarket search
-async function searchEvents(ticker: string): Promise<any[]> {
+async function searchEvents(ticker: string): Promise<PolymarketEvent[]> {
   const config = getConfig();
   try {
     const res = await axios.get(`${config.api.gammaApiUrl}/public-search`, {
@@ -30,7 +55,7 @@ async function searchEvents(ticker: string): Promise<any[]> {
 }
 
 // Orderbook
-async function getOrderbook(tokenId: string): Promise<any> {
+async function getOrderbook(tokenId: string): Promise<Orderbook | null> {
   const config = getConfig();
   try {
     const res = await axios.get(`${config.api.clobApiUrl}/book`, {
@@ -49,7 +74,7 @@ function parseStrikePrice(question: string): number | null {
   return parseFloat(match[1].replace(/,/g, ""));
 }
 
-function extractNoTokenId(market: any): string | null {
+function extractNoTokenId(market: PolymarketMarket): string | null {
   if (market.clobTokenIds) {
     try {
       const tokenIds = JSON.parse(market.clobTokenIds);
@@ -61,15 +86,15 @@ function extractNoTokenId(market: any): string | null {
   return null;
 }
 
-function getBestAsk(orderbook: any): number | null {
+function getBestAsk(orderbook: Orderbook | null): number | null {
   const asks = orderbook?.asks;
-  if (!asks || !Array.isArray(asks) || asks.length === 0) return null;
+  if (!asks || asks.length === 0) return null;
 
   // Sort by price ascending
-  const sorted = asks
-    .map((a: any) => ({ price: parseFloat(a.price), size: parseFloat(a.size) }))
-    .filter((a: any) => !isNaN(a.price) && !isNaN(a.size))
-    .sort((a: any, b: any) => a.price - b.price);
+  const sorted: ParsedAsk[] = asks
+    .map((a) => ({ price: parseFloat(a.price), size: parseFloat(a.size) }))
+    .filter((a) => !isNaN(a.price) && !isNaN(a.size))
+    .sort((a, b) => a.price - b.price);
 
   // Find first ask with purchasable amount (size >= 1 share, or total >= $1)
   for (const ask of sorted) {
@@ -166,7 +191,7 @@ export async function runScanner(): Promise<EventOpportunity[]> {
 
         brackets.push({
           marketId: market.id,
-          question: market.question || market.groupItemTitle,
+          question: market.question || market.groupItemTitle || "",
           strikePrice: strike,
           delta,
           currentNoPrice,

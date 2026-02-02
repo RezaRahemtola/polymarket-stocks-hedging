@@ -3,6 +3,15 @@ import axios from "axios";
 import { getConfig } from "@/lib/config";
 import { getBalance } from "@/lib/trade-client";
 
+interface PolymarketPosition {
+  currentValue: number;
+  title?: string;
+  icon?: string;
+  image?: string;
+  outcome?: string;
+  avgPrice?: number;
+}
+
 export async function GET() {
   const config = getConfig();
 
@@ -22,16 +31,16 @@ export async function GET() {
     ]);
 
     // Filter to only positions with actual value (not resolved/empty)
-    const positions = (positionsRes.data || []).filter(
-      (p: any) => p.currentValue > 0.01,
+    const positions = ((positionsRes.data || []) as PolymarketPosition[]).filter(
+      (p) => p.currentValue > 0.01,
     );
     const totalValue = positions.reduce(
-      (sum: number, p: any) => sum + (p.currentValue || 0),
+      (sum, p) => sum + (p.currentValue || 0),
       0,
     );
 
     // Group positions by market for pie chart
-    const positionsByMarket = positions.map((p: any) => ({
+    const positionsByMarket = positions.map((p) => ({
       title: p.title || "Unknown",
       image: p.icon || p.image || "",
       value: p.currentValue || 0,

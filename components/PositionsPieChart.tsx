@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useMemo, useState } from "react";
 
 interface Position {
@@ -36,17 +37,23 @@ export default function PositionsPieChart({ positions }: Readonly<Props>) {
   );
 
   const segments = useMemo(() => {
-    let currentAngle = 0;
-    return positions.map((p, i) => {
+    const angles = positions.reduce<number[]>((acc, p) => {
       const percentage = total > 0 ? (p.value / total) * 100 : 0;
       const angle = (percentage / 100) * 360;
-      const startAngle = currentAngle;
-      currentAngle += angle;
+      const prevEnd = acc.length > 0 ? acc[acc.length - 1] : 0;
+      acc.push(prevEnd + angle);
+      return acc;
+    }, []);
+
+    return positions.map((p, i) => {
+      const percentage = total > 0 ? (p.value / total) * 100 : 0;
+      const startAngle = i === 0 ? 0 : angles[i - 1];
+      const endAngle = angles[i];
       return {
         ...p,
         percentage,
         startAngle,
-        endAngle: currentAngle,
+        endAngle,
         color: COLORS[i % COLORS.length],
       };
     });
@@ -143,10 +150,12 @@ export default function PositionsPieChart({ positions }: Readonly<Props>) {
             onMouseLeave={() => setHoveredIndex(null)}
           >
             {seg.image ? (
-              <img
+              <Image
                 src={seg.image}
                 alt=""
-                className="w-6 h-6 rounded object-cover"
+                width={24}
+                height={24}
+                className="rounded object-cover"
               />
             ) : (
               <div
