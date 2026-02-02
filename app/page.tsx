@@ -152,58 +152,60 @@ export default function Home() {
     ) : null;
 
   return (
-    <div className="min-h-screen bg-background text-foreground p-6">
+    <div className="min-h-screen bg-background text-foreground p-4 md:p-6">
       {/* Header */}
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-xl font-semibold flex items-center gap-2">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+        <h1 className="text-lg md:text-xl font-semibold">
           Polymarket Opportunities
         </h1>
-        <div className="flex gap-2">
+        <div className="flex gap-2 w-full sm:w-auto">
           {auth?.authenticated ? (
             <Button
               variant="outline"
               onClick={() => logoutMutation.mutate()}
               disabled={logoutMutation.isPending}
+              className="flex-1 sm:flex-none"
             >
               Logout
             </Button>
           ) : (
-            <Button variant="outline" onClick={() => setShowLoginModal(true)}>
+            <Button variant="outline" onClick={() => setShowLoginModal(true)} className="flex-1 sm:flex-none">
               Login
             </Button>
           )}
           <Button
             onClick={() => scanMutation.mutate()}
             disabled={scanMutation.isPending}
+            className="flex-1 sm:flex-none"
           >
-            {scanMutation.isPending ? "Scanning..." : "Scan Markets"}
+            {scanMutation.isPending ? "Scanning..." : "Scan"}
           </Button>
         </div>
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-3 gap-4 mb-6">
-        <Card className="p-4">
-          <p className="text-xs text-muted-foreground uppercase tracking-wide">
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4 mb-6">
+        <Card className="p-3 md:p-4">
+          <p className="text-[10px] md:text-xs text-muted-foreground uppercase tracking-wide">
             Positions ({portfolio?.positionCount || 0})
           </p>
-          <p className="text-2xl font-semibold font-mono mt-1">
+          <p className="text-lg md:text-2xl font-semibold font-mono mt-1">
             ${(portfolio?.positionsValue || 0).toFixed(2)}
           </p>
         </Card>
-        <Card className="p-4">
-          <p className="text-xs text-muted-foreground uppercase tracking-wide">
+        <Card className="p-3 md:p-4">
+          <p className="text-[10px] md:text-xs text-muted-foreground uppercase tracking-wide">
             Available
           </p>
-          <p className="text-2xl font-semibold font-mono mt-1">
+          <p className="text-lg md:text-2xl font-semibold font-mono mt-1">
             ${(portfolio?.balance || 0).toFixed(2)}
           </p>
         </Card>
-        <Card className="p-4">
-          <p className="text-xs text-muted-foreground uppercase tracking-wide">
+        <Card className="p-3 md:p-4 col-span-2 md:col-span-1">
+          <p className="text-[10px] md:text-xs text-muted-foreground uppercase tracking-wide">
             Opportunities
           </p>
-          <p className="text-2xl font-semibold font-mono mt-1">
+          <p className="text-lg md:text-2xl font-semibold font-mono mt-1">
             {allBrackets.filter((b) => b.hasOpportunity).length}
             <span className="text-sm text-muted-foreground ml-1">
               / {allBrackets.length}
@@ -235,8 +237,8 @@ export default function Home() {
           </p>
         </Card>
       ) : (
-        <Card>
-          <Table>
+        <Card className="overflow-x-auto">
+          <Table className="min-w-[700px]">
             <TableHeader>
               <TableRow>
                 <TableHead

@@ -75,9 +75,9 @@ export default function PositionsPieChart({ positions }: Readonly<Props>) {
   };
 
   return (
-    <div className="flex items-center gap-6">
-      <div className="relative">
-        <svg width={size} height={size}>
+    <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
+      <div className="relative flex-shrink-0">
+        <svg width={size} height={size} className="max-w-full">
           {segments.map((seg, i) => (
             <path
               key={i}
@@ -130,7 +130,7 @@ export default function PositionsPieChart({ positions }: Readonly<Props>) {
       </div>
 
       {/* Legend with images */}
-      <div className="flex flex-wrap gap-2 max-w-xs">
+      <div className="flex flex-wrap justify-center sm:justify-start gap-2 max-w-full sm:max-w-xs">
         {segments.map((seg, i) => (
           <div
             key={i}
