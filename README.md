@@ -1,29 +1,38 @@
 # Polymarket Stocks Hedging
 
-<img width="2974" height="2114" alt="image" src="https://github.com/user-attachments/assets/ae976126-0a1d-450f-8dde-376598d1f733" />
+<img width="2978" height="2132" alt="screenshot" src="https://github.com/user-attachments/assets/f5ff88a5-63f0-45d8-8d38-57a5836c202f" />
 
 ## What is this?
 
-[Polymarket](https://polymarket.com) offers prediction markets on stock prices, such as "Will GOOGL close above $200 by end of February?". These markets let you bet YES or NO on outcomes.
+[Polymarket](https://polymarket.com) offers prediction markets on stock prices, such as "Will GOOGL close above $200 by
+end of February?". These markets let you bet YES or NO on outcomes.
 
 ### The opportunity
 
-By buying NO shares on price targets significantly above the current stock price, you're essentially betting the stock won't reach that price. If you're right, you get $1 per share at expiration. If you're wrong but own the actual stock, your stock gains offset the prediction market loss.
+By buying NO shares on price targets significantly above the current stock price, you're essentially betting the stock
+won't reach that price. If you're right, you get $1 per share at expiration. If you're wrong but own the actual stock,
+your stock gains offset the prediction market loss.
 
 ### Why it works
 
-Prediction markets, especially low-liquidity ones, are often inefficient. You can frequently find 20-50%+ APY on relatively safe scenarios (e.g., betting a stock won't rise 30% in 2 weeks).
+Prediction markets, especially low-liquidity ones, are often inefficient. You can frequently find 20-50%+ APY on
+relatively safe scenarios (e.g., betting a stock won't rise 30% in 2 weeks).
 
 ### Example
 
-GOOGL is at $180. A market asks "Will GOOGL hit $250 by March?". NO shares cost $0.92. If GOOGL stays below $250, you profit $0.08/share (8.7% in a few weeks = high APY). If GOOGL somehow hits $250, you lose $0.92/share but your GOOGL stock gained ~39%.
+GOOGL is at $180. A market asks "Will GOOGL hit $250 by March?". NO shares cost $0.92. If GOOGL stays below $250, you
+profit $0.08/share (8.7% in a few weeks = high APY). If GOOGL somehow hits $250, you lose $0.92/share but your GOOGL
+stock gained ~39%.
 
-This tool scans Polymarket for these opportunities, ranks them by attractiveness, and optionally lets you execute trades directly.
+This tool scans Polymarket for these opportunities, ranks them by attractiveness, and optionally lets you execute trades
+directly.
 
 ## Features
 
-- **Market Scanner**: Scans Polymarket for stock price prediction markets and identifies opportunities based on delta from current price, time to expiry, and APY
+- **Market Scanner**: Scans Polymarket for stock price prediction markets and identifies opportunities based on delta
+  from current price, time to expiry, and APY
 - **Portfolio Dashboard**: View positions, available balance, and portfolio breakdown
+- **Stock Holdings Tracker**: Enter your stock holdings to see hedge scenario calculations when trading
 - **Trade Execution**: Execute trades directly with configurable max price and amount (optional - requires wallet setup)
 - **Position Redemption**: Automatically redeems resolved winning positions
 
@@ -71,6 +80,8 @@ Open [http://localhost:3000](http://localhost:3000)
 
 To execute trades, you need to configure your Polymarket wallet.
 
+> ⚠ Please read the [Security](#security) section carefully before enabling trading features
+
 ### 1. Create `.env` file
 
 ```bash
@@ -83,7 +94,8 @@ POLYGON_RPC_URL=https://polygon-rpc.com
 TRADE_PASSWORD=your_secure_password
 ```
 
-> **Finding your Polymarket proxy address**: This is the address Polymarket uses to hold your funds. You can find it in your Polymarket account settings or by checking the deposit address.
+> **Finding your Polymarket proxy address**: This is the address Polymarket uses to hold your funds. You can find it in
+> your Polymarket account settings or by checking the deposit address.
 
 ### 2. Login to trade
 
@@ -96,6 +108,7 @@ Click **Login** in the app header and enter your `TRADE_PASSWORD` to enable trad
 - **Positions**: Total value of open positions with count
 - **Balance**: USDC balance available for trading
 - **Opportunities**: Count of opportunities meeting the `opportunityAPY` threshold
+- **Stock Holdings**: Enter shares you own for each stock to enable hedge calculations
 
 ### Opportunities Table
 
@@ -117,7 +130,10 @@ Click column headers to sort. Columns:
 2. Adjust **Max Price** (highest price you'll pay)
 3. Adjust **Max Amount** (budget limit)
 4. Review shares, cost, APY, and profit preview
-5. Click **Execute**
+5. If you've entered stock holdings, see hedge scenarios showing:
+   - Bet profit if stock stays below strike
+   - Hedge cost % if stock rises above strike
+6. Click **Execute**
 
 ### Skipping
 
@@ -137,6 +153,16 @@ Delta Score = min(|delta|, 50) / 50 * 70
 
 Higher delta = safer bet (stock less likely to reach strike price).
 
+## Security
+
+- **Private Key**: Your `POLYGON_PRIVATE_KEY` grants full control over your wallet. Never share it, commit it to git, or
+  expose it publicly. Use a dedicated wallet with limited funds.
+- **Trade Password**: If exposing the UI on the internet, use a strong `TRADE_PASSWORD`. Anyone with access can execute
+  trades on your behalf.
+- **Stock Holdings**: Stored locally in your browser (localStorage). Never sent to any server.
+- **Self-hosted**: This app is designed to run on your own infrastructure. Don't use third-party hosted versions with
+  your private key.
+
 ## Production Deployment
 
 ### Using Docker
@@ -150,7 +176,8 @@ The app runs on port 50003 by default.
 ### VPN Setup (Optional)
 
 Required to place orders if your server is in a country where Polymarket is restricted (e.g., France).\
-If you don't need it, remove the vpn service from the `docker-compose.yml` file & the references to it in the app service.
+If you don't need it, remove the vpn service from the `docker-compose.yml` file & the references to it in the app
+service.
 
 #### Step 1: Get OpenVPN Configuration
 
