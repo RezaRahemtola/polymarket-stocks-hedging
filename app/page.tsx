@@ -18,6 +18,7 @@ import { useHoldingsStore } from "@/lib/stores/holdings";
 import { BracketOpportunity, EventOpportunity } from "@/lib/types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import Image from "next/image";
+import { Info } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Input } from "@/components/ui/input";
 
@@ -276,8 +277,17 @@ export default function Home() {
             {/* Stock Holdings */}
             {uniqueTickers.length > 0 && (
               <div className="flex-1 min-w-0 mt-6 lg:mt-0 lg:border-l lg:border-border lg:pl-8">
-                <p className="text-xs text-muted-foreground uppercase tracking-wide mb-4">
+                <p className="text-xs text-muted-foreground uppercase tracking-wide mb-4 flex items-center gap-1.5">
                   Stock Holdings
+                  <span className="relative group">
+                    <Info
+                      size={14}
+                      className="cursor-help opacity-60 hover:opacity-100"
+                    />
+                    <span className="absolute left-1/2 -translate-x-1/2 top-6 px-2 py-1 bg-popover border border-border rounded text-[10px] whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
+                      Stored locally, never sent anywhere
+                    </span>
+                  </span>
                 </p>
                 <div className="space-y-3">
                   {uniqueTickers.map(({ ticker, price, image }) => {

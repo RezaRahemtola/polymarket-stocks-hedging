@@ -12,6 +12,12 @@ services:
       - ./config:/app/config:ro
       - ./data:/app/data
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000/api/auth"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
 
   vpn:
     image: dperson/openvpn-client
