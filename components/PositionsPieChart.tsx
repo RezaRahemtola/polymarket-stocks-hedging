@@ -9,6 +9,7 @@ interface Position {
   value: number;
   outcome: string;
   avgPrice: number;
+  curPrice: number;
 }
 
 interface Props {
@@ -130,7 +131,8 @@ export default function PositionsPieChart({ positions }: Readonly<Props>) {
               ${segments[hoveredIndex].value.toFixed(2)}
             </p>
             <p className="text-xs text-muted-foreground">
-              Avg: ${segments[hoveredIndex].avgPrice.toFixed(3)}
+              Avg: ${segments[hoveredIndex].avgPrice.toFixed(3)} · Now: $
+              {segments[hoveredIndex].curPrice.toFixed(3)}
             </p>
           </div>
         )}

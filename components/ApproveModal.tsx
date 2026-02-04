@@ -15,6 +15,9 @@ import { useEffect, useState } from "react";
 interface Props {
   bracket: BracketOpportunity;
   daysToExpiry: number;
+  ticker: string;
+  currentStockPrice: number;
+  userShares: number;
   onClose: () => void;
   onSuccess: () => void;
 }
@@ -22,6 +25,9 @@ interface Props {
 export default function ApproveModal({
   bracket,
   daysToExpiry,
+  ticker,
+  currentStockPrice,
+  userShares,
   onClose,
   onSuccess,
 }: Props) {
@@ -177,28 +183,68 @@ export default function ApproveModal({
               Loading...
             </p>
           ) : preview ? (
-            <div className="grid grid-cols-2 gap-3">
-              <div className="p-3 bg-secondary/50 rounded">
-                <p className="text-xs text-muted-foreground">Shares</p>
-                <p className="font-mono">{preview.shares.toFixed(2)}</p>
+            <>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="p-3 bg-secondary/50 rounded">
+                  <p className="text-xs text-muted-foreground">Shares</p>
+                  <p className="font-mono">{preview.shares.toFixed(2)}</p>
+                </div>
+                <div className="p-3 bg-secondary/50 rounded">
+                  <p className="text-xs text-muted-foreground">Cost</p>
+                  <p className="font-mono">${preview.totalCost.toFixed(2)}</p>
+                </div>
+                <div className="p-3 bg-secondary/50 rounded">
+                  <p className="text-xs text-muted-foreground">APY</p>
+                  <p className="font-mono text-primary">
+                    {preview.apy.toFixed(2)}%
+                  </p>
+                </div>
+                <div className="p-3 bg-secondary/50 rounded">
+                  <p className="text-xs text-muted-foreground">Profit</p>
+                  <p className="font-mono text-primary">
+                    ${preview.profit.toFixed(2)}
+                  </p>
+                </div>
               </div>
-              <div className="p-3 bg-secondary/50 rounded">
-                <p className="text-xs text-muted-foreground">Cost</p>
-                <p className="font-mono">${preview.totalCost.toFixed(2)}</p>
-              </div>
-              <div className="p-3 bg-secondary/50 rounded">
-                <p className="text-xs text-muted-foreground">APY</p>
-                <p className="font-mono text-primary">
-                  {preview.apy.toFixed(2)}%
-                </p>
-              </div>
-              <div className="p-3 bg-secondary/50 rounded">
-                <p className="text-xs text-muted-foreground">Profit</p>
-                <p className="font-mono text-primary">
-                  ${preview.profit.toFixed(2)}
-                </p>
-              </div>
-            </div>
+
+              {/* Hedge P&L Scenarios */}
+              {userShares > 0 && currentStockPrice > 0 && (
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="p-3 bg-green-500/10 border border-green-500/20 rounded">
+                    <p className="text-[10px] text-muted-foreground uppercase">
+                      If {ticker} &lt; ${bracket.strikePrice}
+                    </p>
+                    <p className="font-mono text-green-400 font-semibold">
+                      +${((1 - preview.avgPrice) * preview.shares).toFixed(0)}
+                    </p>
+                    <p className="text-[10px] text-muted-foreground">
+                      bet profit
+                    </p>
+                  </div>
+                  {(() => {
+                    const minStockGain =
+                      userShares * (bracket.strikePrice - currentStockPrice);
+                    const hedgeCostPct =
+                      minStockGain > 0
+                        ? (preview.totalCost / minStockGain) * 100
+                        : 0;
+                    return (
+                      <div className="p-3 bg-secondary/50 rounded">
+                        <p className="text-[10px] text-muted-foreground uppercase">
+                          If {ticker} &ge; ${bracket.strikePrice}
+                        </p>
+                        <p className="font-mono text-muted-foreground font-semibold">
+                          {hedgeCostPct.toFixed(1)}%
+                        </p>
+                        <p className="text-[10px] text-muted-foreground">
+                          hedge cost
+                        </p>
+                      </div>
+                    );
+                  })()}
+                </div>
+              )}
+            </>
           ) : null}
 
           {result && (

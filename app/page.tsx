@@ -14,10 +14,12 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { useHoldingsStore } from "@/lib/stores/holdings";
 import { BracketOpportunity, EventOpportunity } from "@/lib/types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import Image from "next/image";
 import { useMemo, useState } from "react";
+import { Input } from "@/components/ui/input";
 
 type SortKey =
   | "market"
@@ -31,6 +33,7 @@ type SortDir = "asc" | "desc";
 
 export default function Home() {
   const queryClient = useQueryClient();
+  const { holdings, setHolding } = useHoldingsStore();
   const [selectedBracket, setSelectedBracket] = useState<{
     bracket: BracketOpportunity;
     daysToExpiry: number;
@@ -39,6 +42,10 @@ export default function Home() {
   const [sortKey, setSortKey] = useState<SortKey>("score");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
   const [showLoginModal, setShowLoginModal] = useState(false);
+  const [pendingTradeBracket, setPendingTradeBracket] = useState<{
+    bracket: BracketOpportunity & { event: EventOpportunity };
+    daysToExpiry: number;
+  } | null>(null);
 
   const { data: auth, refetch: refetchAuth } = useQuery<{
     authenticated: boolean;
@@ -75,6 +82,7 @@ export default function Home() {
       value: number;
       outcome: string;
       avgPrice: number;
+      curPrice: number;
     }[];
   }>({
     queryKey: ["portfolio"],
@@ -104,6 +112,24 @@ export default function Home() {
     queryClient.invalidateQueries({ queryKey: ["portfolio"] });
     scanMutation.mutate();
   };
+
+  const uniqueTickers = useMemo(() => {
+    if (!opportunities) return [];
+    const tickerMap = new Map<string, { price: number; image: string }>();
+    opportunities.forEach((o) => {
+      if (o.ticker && !tickerMap.has(o.ticker)) {
+        tickerMap.set(o.ticker, {
+          price: o.currentStockPrice,
+          image: o.eventImage,
+        });
+      }
+    });
+    return Array.from(tickerMap.entries()).map(([ticker, data]) => ({
+      ticker,
+      price: data.price,
+      image: data.image,
+    }));
+  }, [opportunities]);
 
   const allBrackets = useMemo(() => {
     const brackets =
@@ -221,13 +247,77 @@ export default function Home() {
         </Card>
       </div>
 
-      {/* Positions Pie Chart */}
-      {portfolio?.positions && portfolio.positions.length > 0 && (
+      {/* Portfolio Breakdown Card */}
+      {(portfolio?.positions?.length || uniqueTickers.length > 0) && (
         <Card className="p-4 mb-6">
-          <p className="text-xs text-muted-foreground uppercase tracking-wide mb-4">
-            Portfolio Breakdown
-          </p>
-          <PositionsPieChart positions={portfolio.positions} />
+          <div className="flex flex-col lg:flex-row lg:gap-8">
+            {/* Polymarket Portfolio */}
+            {portfolio?.positions && portfolio.positions.length > 0 && (
+              <div className="flex-1 min-w-0">
+                <p className="text-xs text-muted-foreground uppercase tracking-wide mb-4">
+                  Polymarket Portfolio
+                </p>
+                <PositionsPieChart positions={portfolio.positions} />
+              </div>
+            )}
+
+            {/* Stock Holdings */}
+            {uniqueTickers.length > 0 && (
+              <div className="flex-1 min-w-0 mt-6 lg:mt-0 lg:border-l lg:border-border lg:pl-8">
+                <p className="text-xs text-muted-foreground uppercase tracking-wide mb-4">
+                  Stock Holdings
+                </p>
+                <div className="space-y-3">
+                  {uniqueTickers.map(({ ticker, price, image }) => {
+                    const holdingValue = (holdings[ticker] || 0) * price;
+                    return (
+                      <div
+                        key={ticker}
+                        className="flex items-center gap-3 p-2 rounded-lg bg-secondary/30"
+                      >
+                        {image ? (
+                          <Image
+                            src={image}
+                            alt={ticker}
+                            width={32}
+                            height={32}
+                            className="rounded-md"
+                          />
+                        ) : (
+                          <div className="w-8 h-8 rounded-md bg-muted flex items-center justify-center text-xs font-bold">
+                            {ticker.slice(0, 2)}
+                          </div>
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium">{ticker}</p>
+                          <p className="text-xs text-muted-foreground">
+                            ${price.toFixed(2)}
+                          </p>
+                        </div>
+                        <div className="flex flex-col items-end gap-1">
+                          <Input
+                            type="number"
+                            min="0"
+                            placeholder="0"
+                            value={holdings[ticker] || ""}
+                            onChange={(e) =>
+                              setHolding(ticker, Number(e.target.value) || 0)
+                            }
+                            className="font-mono h-8 w-24 text-right"
+                          />
+                          {holdingValue > 0 && (
+                            <p className="text-xs text-muted-foreground">
+                              ${holdingValue.toLocaleString()}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
         </Card>
       )}
 
@@ -363,6 +453,10 @@ export default function Home() {
                         variant="default"
                         onClick={() => {
                           if (!auth?.authenticated) {
+                            setPendingTradeBracket({
+                              bracket: b,
+                              daysToExpiry: b.event.daysToExpiry,
+                            });
                             setShowLoginModal(true);
                             return;
                           }
@@ -401,6 +495,29 @@ export default function Home() {
         <ApproveModal
           bracket={selectedBracket.bracket}
           daysToExpiry={selectedBracket.daysToExpiry}
+          ticker={
+            (
+              selectedBracket.bracket as BracketOpportunity & {
+                event: EventOpportunity;
+              }
+            ).event.ticker
+          }
+          currentStockPrice={
+            (
+              selectedBracket.bracket as BracketOpportunity & {
+                event: EventOpportunity;
+              }
+            ).event.currentStockPrice
+          }
+          userShares={
+            holdings[
+              (
+                selectedBracket.bracket as BracketOpportunity & {
+                  event: EventOpportunity;
+                }
+              ).event.ticker
+            ] || 0
+          }
           onClose={() => {
             setSelectedBracket(null);
             setModalType(null);
@@ -424,8 +541,18 @@ export default function Home() {
 
       {showLoginModal && (
         <LoginModal
-          onClose={() => setShowLoginModal(false)}
-          onSuccess={() => refetchAuth()}
+          onClose={() => {
+            setShowLoginModal(false);
+            setPendingTradeBracket(null);
+          }}
+          onSuccess={() => {
+            refetchAuth();
+            if (pendingTradeBracket) {
+              setSelectedBracket(pendingTradeBracket);
+              setModalType("approve");
+              setPendingTradeBracket(null);
+            }
+          }}
         />
       )}
     </div>

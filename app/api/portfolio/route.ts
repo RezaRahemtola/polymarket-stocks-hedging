@@ -11,6 +11,7 @@ interface PolymarketPosition {
   image?: string;
   outcome?: string;
   avgPrice?: number;
+  curPrice?: number;
 }
 
 export async function GET() {
@@ -47,6 +48,7 @@ export async function GET() {
       value: p.currentValue || 0,
       outcome: p.outcome || "",
       avgPrice: p.avgPrice || 0,
+      curPrice: p.curPrice || 0,
     }));
 
     return NextResponse.json({
