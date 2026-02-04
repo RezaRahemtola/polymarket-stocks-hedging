@@ -46,9 +46,14 @@ export default function Home() {
     bracket: BracketOpportunity & { event: EventOpportunity };
     daysToExpiry: number;
   } | null>(null);
+  const [pendingSkipBracket, setPendingSkipBracket] = useState<{
+    bracket: BracketOpportunity & { event: EventOpportunity };
+    daysToExpiry: number;
+  } | null>(null);
 
   const { data: auth, refetch: refetchAuth } = useQuery<{
     authenticated: boolean;
+    readonlyMode: boolean;
   }>({
     queryKey: ["auth"],
     queryFn: async () => {
@@ -182,6 +187,13 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-background text-foreground p-4 md:p-6">
+      {/* Readonly Banner */}
+      {auth?.readonlyMode && !auth?.authenticated && (
+        <div className="mb-4 p-3 bg-yellow-500/10 border border-yellow-500/30 rounded-lg text-sm text-yellow-400">
+          Readonly mode — login to trade or skip opportunities
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
         <h1 className="text-lg md:text-xl font-semibold">
@@ -473,6 +485,14 @@ export default function Home() {
                         size="sm"
                         variant="ghost"
                         onClick={() => {
+                          if (auth?.readonlyMode && !auth?.authenticated) {
+                            setPendingSkipBracket({
+                              bracket: b,
+                              daysToExpiry: b.event.daysToExpiry,
+                            });
+                            setShowLoginModal(true);
+                            return;
+                          }
                           setSelectedBracket({
                             bracket: b,
                             daysToExpiry: b.event.daysToExpiry,
@@ -544,6 +564,7 @@ export default function Home() {
           onClose={() => {
             setShowLoginModal(false);
             setPendingTradeBracket(null);
+            setPendingSkipBracket(null);
           }}
           onSuccess={() => {
             refetchAuth();
@@ -551,6 +572,11 @@ export default function Home() {
               setSelectedBracket(pendingTradeBracket);
               setModalType("approve");
               setPendingTradeBracket(null);
+            }
+            if (pendingSkipBracket) {
+              setSelectedBracket(pendingSkipBracket);
+              setModalType("reject");
+              setPendingSkipBracket(null);
             }
           }}
         />

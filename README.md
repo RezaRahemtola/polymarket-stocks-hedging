@@ -92,6 +92,10 @@ POLYGON_RPC_URL=https://polygon-rpc.com
 
 # Auth password for trading
 TRADE_PASSWORD=your_secure_password
+
+# Readonly mode (default: true)
+# When true, requires login to trade or skip opportunities
+READONLY_MODE=true
 ```
 
 > **Finding your Polymarket proxy address**: This is the address Polymarket uses to hold your funds. You can find it in
@@ -159,6 +163,8 @@ Higher delta = safer bet (stock less likely to reach strike price).
   expose it publicly. Use a dedicated wallet with limited funds.
 - **Trade Password**: If exposing the UI on the internet, use a strong `TRADE_PASSWORD`. Anyone with access can execute
   trades on your behalf.
+- **Readonly Mode**: Enabled by default (`READONLY_MODE=true`). Requires login to skip opportunities, preventing
+  visitors from modifying your data.
 - **Stock Holdings**: Stored locally in your browser (localStorage). Never sent to any server.
 - **Self-hosted**: This app is designed to run on your own infrastructure. Don't use third-party hosted versions with
   your private key.

@@ -1,9 +1,25 @@
 import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
 import { addRejection } from "@/lib/persistence";
 import { getConfig } from "@/lib/config";
 import { Rejection } from "@/lib/types";
 
+const AUTH_COOKIE = "trade_auth";
+
 export async function POST(request: Request) {
+  const readonlyMode = process.env.READONLY_MODE !== "false";
+
+  if (readonlyMode) {
+    const cookieStore = await cookies();
+    const authCookie = cookieStore.get(AUTH_COOKIE);
+    if (authCookie?.value !== "authenticated") {
+      return NextResponse.json(
+        { error: "Authentication required in readonly mode" },
+        { status: 401 },
+      );
+    }
+  }
+
   const { marketId, strikePrice, type } = await request.json();
 
   if (!marketId || strikePrice === undefined || !type) {

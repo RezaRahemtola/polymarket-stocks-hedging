@@ -33,8 +33,10 @@ export async function POST(request: Request) {
 export async function GET() {
   const cookieStore = await cookies();
   const authCookie = cookieStore.get(AUTH_COOKIE);
+  const readonlyMode = process.env.READONLY_MODE !== "false";
   return NextResponse.json({
     authenticated: authCookie?.value === "authenticated",
+    readonlyMode,
   });
 }
 
