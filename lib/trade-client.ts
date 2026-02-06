@@ -121,7 +121,7 @@ export function calculateExecutionPreview(
 export async function executeTrade(
   noTokenId: string,
   maxPrice: number,
-  maxAmount?: number,
+  amount: number,
 ): Promise<{
   success: boolean;
   sharesBought: number;
@@ -129,79 +129,38 @@ export async function executeTrade(
   totalCost: number;
 }> {
   const client = await getClobClient();
-  const orderbook = await getOrderbook(noTokenId);
-  if (!orderbook) throw new Error("Failed to fetch orderbook");
+  const roundedMaxPrice = maxPrice;
 
-  const asks = orderbook.asks
-    .map((a) => ({
-      price: Number.parseFloat(a.price),
-      size: Number.parseFloat(a.size),
-    }))
-    .filter((a) => a.price <= maxPrice)
-    .sort((a, b) => a.price - b.price);
+  try {
+    const result = await client.createAndPostMarketOrder(
+      {
+        tokenID: noTokenId,
+        price: roundedMaxPrice,
+        amount,
+        side: Side.BUY,
+        feeRateBps: 0,
+        orderType: OrderType.FAK,
+      },
+      undefined,
+      OrderType.FAK,
+    );
 
-  if (asks.length === 0) {
+    if (!result?.success) {
+      logger.error(`[Trade] FAK order rejected: ${JSON.stringify(result)}`);
+      return { success: false, sharesBought: 0, avgPrice: 0, totalCost: 0 };
+    }
+
+    const totalCost = amount;
+    const sharesBought = totalCost / roundedMaxPrice;
+
+    return {
+      success: true,
+      sharesBought,
+      avgPrice: roundedMaxPrice,
+      totalCost,
+    };
+  } catch (err) {
+    logger.error(`[Trade] FAK order failed: ${err}`);
     return { success: false, sharesBought: 0, avgPrice: 0, totalCost: 0 };
   }
-
-  let totalShares = 0;
-  let totalCost = 0;
-  let remainingBudget = maxAmount;
-
-  // Place orders at each price level
-  for (const ask of asks) {
-    const roundedPrice = Math.round(ask.price * 100) / 100;
-    let shares = Math.floor(ask.size);
-    if (shares <= 0) continue;
-
-    // Limit shares if we have a budget constraint
-    if (remainingBudget !== undefined) {
-      const maxAffordableShares = Math.floor(remainingBudget / roundedPrice);
-      shares = Math.min(shares, maxAffordableShares);
-      if (shares <= 0) break;
-    }
-
-    // Min order size is $1
-    const orderCost = roundedPrice * shares;
-    if (orderCost < 1) {
-      logger.debug(`[Trade] Skipping order: $${orderCost.toFixed(2)} < $1 min`);
-      continue;
-    }
-
-    try {
-      const tickSize = await client.getTickSize(noTokenId);
-      const negRisk = await client.getNegRisk(noTokenId);
-
-      const order = await client.createOrder(
-        {
-          tokenID: noTokenId,
-          price: roundedPrice,
-          side: Side.BUY,
-          size: shares,
-          feeRateBps: 0,
-        },
-        { tickSize, negRisk },
-      );
-
-      const result = await client.postOrder(order, OrderType.GTC);
-      if (!result?.success) {
-        logger.error(`[Trade] Order rejected: ${JSON.stringify(result)}`);
-        continue;
-      }
-      totalShares += shares;
-      totalCost += orderCost;
-      if (remainingBudget !== undefined) {
-        remainingBudget -= orderCost;
-      }
-    } catch (err) {
-      logger.error(`[Trade] Order failed: ${err}`);
-    }
-  }
-
-  return {
-    success: totalShares > 0,
-    sharesBought: totalShares,
-    avgPrice: totalShares > 0 ? totalCost / totalShares : 0,
-    totalCost,
-  };
 }

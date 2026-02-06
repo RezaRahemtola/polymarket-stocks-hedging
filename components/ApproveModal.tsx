@@ -31,7 +31,7 @@ export default function ApproveModal({
   onClose,
   onSuccess,
 }: Props) {
-  const [maxPrice, setMaxPrice] = useState(bracket.currentNoPrice.toFixed(2));
+  const [maxPrice, setMaxPrice] = useState(bracket.currentNoPrice.toFixed(3));
   const [maxAmount, setMaxAmount] = useState<string>("");
   const [maxAmountEdited, setMaxAmountEdited] = useState(false);
   const [preview, setPreview] = useState<ExecutionPreview | null>(null);

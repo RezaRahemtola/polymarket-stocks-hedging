@@ -28,6 +28,13 @@ export async function POST(request: Request) {
   }
 
   try {
+    if (!maxAmount) {
+      return NextResponse.json(
+        { error: "maxAmount is required" },
+        { status: 400 },
+      );
+    }
+
     const result = await executeTrade(noTokenId, maxPrice, maxAmount);
 
     if (result.success) {
