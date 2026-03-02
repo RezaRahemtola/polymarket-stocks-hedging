@@ -18,13 +18,13 @@ export async function GET() {
   const config = getConfig();
 
   try {
-    const [positionsRes, balance] = await Promise.all([
+    const [positionsRes, balanceRes] = await Promise.allSettled([
       axios.get("https://data-api.polymarket.com/positions", {
         params: {
           user: config.api.funderAddress,
           limit: 100,
           sizeThreshold: 0.1,
-          sortBy: "CURRENT_VALUE",
+          sortBy: "CURRENT",
           sortDirection: "DESC",
         },
         timeout: 10000,
@@ -32,10 +32,23 @@ export async function GET() {
       getBalance(),
     ]);
 
+    if (positionsRes.status === "rejected") {
+      logger.error(
+        `[Portfolio] Error fetching positions: ${positionsRes.reason}`,
+      );
+    }
+    if (balanceRes.status === "rejected") {
+      logger.error(`[Portfolio] Error fetching balance: ${balanceRes.reason}`);
+    }
+
+    const rawPositions =
+      positionsRes.status === "fulfilled"
+        ? ((positionsRes.value.data || []) as PolymarketPosition[])
+        : [];
+    const balance = balanceRes.status === "fulfilled" ? balanceRes.value : 0;
+
     // Filter to only positions with actual value (not resolved/empty)
-    const positions = (
-      (positionsRes.data || []) as PolymarketPosition[]
-    ).filter((p) => p.currentValue > 0.01);
+    const positions = rawPositions.filter((p) => p.currentValue > 0.01);
     const totalValue = positions.reduce(
       (sum, p) => sum + (p.currentValue || 0),
       0,
