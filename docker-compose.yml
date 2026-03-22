@@ -9,8 +9,8 @@ services:
     env_file:
       - .env
     volumes:
-      - ./config:/app/config:ro
-      - ./data:/app/data
+      - ${CONFIG_PATH:-./config}:/app/config:ro
+      - ${DATA_PATH:-./data}:/app/data
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000/api/auth"]
@@ -29,7 +29,7 @@ services:
     devices:
       - /dev/net/tun
     volumes:
-      - ./vpn:/vpn
+      - ${VPN_PATH:-./vpn}:/vpn
     restart: unless-stopped
     sysctls:
       - net.ipv6.conf.all.disable_ipv6=0
