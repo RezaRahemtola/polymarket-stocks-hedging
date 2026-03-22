@@ -22,8 +22,6 @@ services:
   vpn:
     image: dperson/openvpn-client
     container_name: poylmarket-stocks-hedging-vpn
-    ports:
-      - "50003:3000"
     cap_add:
       - NET_ADMIN
     devices:
