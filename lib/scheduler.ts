@@ -2,7 +2,6 @@ import { runScanner } from "./scanner";
 import { saveOpportunities } from "./persistence";
 import { getConfig } from "./config";
 import { logger } from "./logger";
-import { getPositionRedeemer } from "./position-redeemer";
 
 let intervalId: ReturnType<typeof setInterval> | null = null;
 
@@ -14,14 +13,6 @@ export async function runScan() {
     logger.info(`[Scheduler] Found ${opportunities.length} events`);
   } catch (err) {
     logger.error(`[Scheduler] Scan failed: ${err}`);
-  }
-
-  // Check for redeemable positions
-  try {
-    const redeemer = getPositionRedeemer();
-    await redeemer.checkAndRedeemPositions();
-  } catch (err) {
-    logger.error(`[Scheduler] Redemption check failed: ${err}`);
   }
 }
 

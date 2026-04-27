@@ -8,6 +8,7 @@ logs/
 data/
 .next/
 .claude
+tsconfig.tsbuildinfo
 
 /vpn/vpn.ovpn
 /vpn/vpn.auth
