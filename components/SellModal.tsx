@@ -66,20 +66,10 @@ export default function SellModal({
     run();
   }, [position.tokenId, sellableSize]);
 
-  // Market preview: refetch on qty/price change (debounced). Limit: compute locally.
+  // Market preview: refetch on qty/price change (debounced). The fetched value
+  // is stored in `preview` and only used for market mode (see displayPreview).
   useEffect(() => {
-    if (mode === "limit") {
-      setPreview({
-        fillableShares: qtyNum,
-        proceeds: priceNum * qtyNum,
-        avgPrice: priceNum,
-      });
-      return;
-    }
-    if (!qtyValid) {
-      setPreview(null);
-      return;
-    }
+    if (mode !== "market" || !qtyValid) return;
     const timer = setTimeout(async () => {
       setLoading(true);
       try {
@@ -96,10 +86,22 @@ export default function SellModal({
     return () => clearTimeout(timer);
   }, [mode, qtyNum, priceNum, qtyValid, position.tokenId]);
 
+  // Limit proceeds are derived during render; market uses the fetched preview.
+  const displayPreview: SellPreview | null =
+    mode === "limit"
+      ? {
+          fillableShares: qtyNum,
+          proceeds: priceNum * qtyNum,
+          avgPrice: priceNum,
+        }
+      : qtyValid
+        ? preview
+        : null;
+
   const partialFill =
     mode === "market" &&
-    preview != null &&
-    preview.fillableShares + 1e-9 < qtyNum;
+    displayPreview != null &&
+    displayPreview.fillableShares + 1e-9 < qtyNum;
 
   const handleExecute = async () => {
     setExecuting(true);
@@ -226,27 +228,29 @@ export default function SellModal({
             <p className="text-sm text-muted-foreground text-center py-4">
               Loading...
             </p>
-          ) : preview ? (
+          ) : displayPreview ? (
             <div className="grid grid-cols-2 gap-3">
               <div className="p-3 bg-secondary/50 rounded">
                 <p className="text-xs text-muted-foreground">
                   {mode === "market" ? "You'll receive ≈" : "If filled"}
                 </p>
                 <p className="font-mono text-primary">
-                  ${preview.proceeds.toFixed(2)}
+                  ${displayPreview.proceeds.toFixed(2)}
                 </p>
               </div>
               <div className="p-3 bg-secondary/50 rounded">
                 <p className="text-xs text-muted-foreground">Avg price</p>
-                <p className="font-mono">${preview.avgPrice.toFixed(3)}</p>
+                <p className="font-mono">
+                  ${displayPreview.avgPrice.toFixed(3)}
+                </p>
               </div>
             </div>
           ) : null}
 
           {partialFill && (
             <p className="text-xs text-yellow-400">
-              Only {preview!.fillableShares.toFixed(2)} shares fill at ≥ $
-              {priceNum.toFixed(3)}. Lower the min price to fill more.
+              Only {displayPreview!.fillableShares.toFixed(2)} shares fill at ≥
+              ${priceNum.toFixed(3)}. Lower the min price to fill more.
             </p>
           )}
 
@@ -273,7 +277,7 @@ export default function SellModal({
                   executing ||
                   !qtyValid ||
                   (mode === "market" &&
-                    (!preview || preview.fillableShares === 0)) ||
+                    (!displayPreview || displayPreview.fillableShares === 0)) ||
                   (mode === "limit" && priceNum <= 0)
                 }
                 className="flex-1 bg-primary text-primary-foreground"
