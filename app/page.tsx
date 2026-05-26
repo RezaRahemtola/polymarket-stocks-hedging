@@ -323,14 +323,16 @@ export default function Home() {
                   <p className="text-xs text-muted-foreground uppercase tracking-wide">
                     Polymarket Portfolio
                   </p>
-                  <button
+                  <Button
                     type="button"
+                    variant={showAdvanced ? "secondary" : "outline"}
+                    size="sm"
                     onClick={() => setShowAdvanced((v) => !v)}
-                    className={`flex items-center gap-1 text-xs ${showAdvanced ? "text-primary" : "text-muted-foreground"} hover:text-primary`}
+                    className="h-7 gap-1 px-2 text-xs"
                   >
                     <Settings size={14} />
                     Advanced
-                  </button>
+                  </Button>
                 </div>
                 <PositionsPieChart positions={portfolio.positions} />
                 {showAdvanced && (
