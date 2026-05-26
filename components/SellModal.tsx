@@ -182,15 +182,17 @@ export default function SellModal({
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <label className="text-sm text-muted-foreground flex justify-between">
+              <label className="text-sm text-muted-foreground flex items-center justify-between">
                 <span>Quantity</span>
-                <button
+                <Button
                   type="button"
-                  className="text-primary hover:underline"
+                  variant="link"
+                  size="sm"
+                  className="h-auto p-0 text-xs"
                   onClick={() => setQuantity(String(sellableSize))}
                 >
                   Max
-                </button>
+                </Button>
               </label>
               <Input
                 type="number"
