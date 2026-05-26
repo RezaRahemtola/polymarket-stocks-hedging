@@ -8,7 +8,7 @@ import {
 import { Wallet } from "ethers";
 import { getConfig } from "./config";
 import { logger } from "./logger";
-import { Orderbook, SellPreview } from "./types";
+import { Orderbook, SellPreview, OpenOrderView } from "./types";
 
 let clobClient: ClobClient | null = null;
 
@@ -204,5 +204,138 @@ export async function executeTrade(
   } catch (err) {
     logger.error(`[Trade] FAK order failed: ${err}`);
     return { success: false, sharesBought: 0, avgPrice: 0, totalCost: 0 };
+  }
+}
+
+export type SellResult =
+  | {
+      success: boolean;
+      mode: "market";
+      sharesSold: number;
+      avgPrice: number;
+      proceeds: number;
+    }
+  | { success: boolean; mode: "limit"; orderId: string };
+
+export async function executeSell(args: {
+  tokenId: string;
+  mode: "market" | "limit";
+  shares: number;
+  price: number;
+}): Promise<SellResult> {
+  const client = await getClobClient();
+
+  if (args.mode === "limit") {
+    try {
+      const result = await client.createAndPostOrder(
+        {
+          tokenID: args.tokenId,
+          price: args.price,
+          size: args.shares,
+          side: Side.SELL,
+        },
+        undefined,
+        OrderType.GTC,
+      );
+      if (!result?.success) {
+        logger.error(`[Sell] Limit order rejected: ${JSON.stringify(result)}`);
+        return { success: false, mode: "limit", orderId: "" };
+      }
+      return { success: true, mode: "limit", orderId: result.orderID ?? "" };
+    } catch (err) {
+      logger.error(`[Sell] Limit order failed: ${err}`);
+      return { success: false, mode: "limit", orderId: "" };
+    }
+  }
+
+  // Market (FAK). `price` is a MIN-price floor: fills only bids >= price.
+  try {
+    const result = await client.createAndPostMarketOrder(
+      {
+        tokenID: args.tokenId,
+        amount: args.shares,
+        price: args.price,
+        side: Side.SELL,
+        orderType: OrderType.FAK,
+      },
+      undefined,
+      OrderType.FAK,
+    );
+
+    logger.info(`[Sell] FAK raw result: ${JSON.stringify(result)}`);
+
+    if (!result?.success) {
+      logger.error(`[Sell] FAK order rejected: ${JSON.stringify(result)}`);
+      return {
+        success: false,
+        mode: "market",
+        sharesSold: 0,
+        avgPrice: 0,
+        proceeds: 0,
+      };
+    }
+
+    // SELL inverts BUY: maker gives shares (makingAmount), takes USDC (takingAmount).
+    const sharesSold = Number.parseFloat(result.makingAmount ?? "0");
+    const proceeds = Number.parseFloat(result.takingAmount ?? "0");
+
+    if (sharesSold <= 0 || proceeds <= 0) {
+      logger.error(`[Sell] FAK order zero-filled: ${JSON.stringify(result)}`);
+      return {
+        success: false,
+        mode: "market",
+        sharesSold: 0,
+        avgPrice: 0,
+        proceeds: 0,
+      };
+    }
+
+    return {
+      success: true,
+      mode: "market",
+      sharesSold,
+      avgPrice: proceeds / sharesSold,
+      proceeds,
+    };
+  } catch (err) {
+    logger.error(`[Sell] FAK order failed: ${err}`);
+    return {
+      success: false,
+      mode: "market",
+      sharesSold: 0,
+      avgPrice: 0,
+      proceeds: 0,
+    };
+  }
+}
+
+export async function getOpenOrders(): Promise<OpenOrderView[]> {
+  try {
+    const client = await getClobClient();
+    const orders = await client.getOpenOrders();
+    return (orders || []).map((o) => ({
+      orderId: o.id,
+      tokenId: o.asset_id,
+      side: o.side,
+      price: Number.parseFloat(o.price),
+      originalSize: Number.parseFloat(o.original_size),
+      sizeMatched: Number.parseFloat(o.size_matched),
+      outcome: o.outcome,
+    }));
+  } catch (err) {
+    logger.error(`[Orders] Error fetching open orders: ${err}`);
+    return [];
+  }
+}
+
+export async function cancelOpenOrder(orderId: string): Promise<boolean> {
+  try {
+    const client = await getClobClient();
+    const result = await client.cancelOrder({ orderID: orderId });
+    logger.info(`[Orders] Cancel ${orderId}: ${JSON.stringify(result)}`);
+    return true;
+  } catch (err) {
+    logger.error(`[Orders] Cancel failed: ${err}`);
+    return false;
   }
 }
