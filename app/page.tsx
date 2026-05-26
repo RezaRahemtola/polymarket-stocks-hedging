@@ -3,7 +3,9 @@
 import ApproveModal from "@/components/ApproveModal";
 import LoginModal from "@/components/LoginModal";
 import PositionsPieChart from "@/components/PositionsPieChart";
+import PositionsTable from "@/components/PositionsTable";
 import RejectModal from "@/components/RejectModal";
+import SellModal from "@/components/SellModal";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import {
@@ -15,10 +17,15 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useHoldingsStore } from "@/lib/stores/holdings";
-import { BracketOpportunity, EventOpportunity } from "@/lib/types";
+import {
+  BracketOpportunity,
+  EventOpportunity,
+  OpenOrderView,
+  Position,
+} from "@/lib/types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import Image from "next/image";
-import { Info } from "lucide-react";
+import { Info, Settings } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Input } from "@/components/ui/input";
 
@@ -82,14 +89,7 @@ export default function Home() {
     positionsValue: number;
     balance: number;
     positionCount: number;
-    positions: {
-      title: string;
-      image: string;
-      value: number;
-      outcome: string;
-      avgPrice: number;
-      curPrice: number;
-    }[];
+    positions: Position[];
   }>({
     queryKey: ["portfolio"],
     queryFn: async () => {
@@ -98,6 +98,58 @@ export default function Home() {
     },
     refetchInterval: 60000, // refresh every minute
   });
+
+  const [showAdvanced, setShowAdvanced] = useState(false);
+  const [sellPosition, setSellPosition] = useState<Position | null>(null);
+  const [pendingSellPosition, setPendingSellPosition] =
+    useState<Position | null>(null);
+  const [cancelingId, setCancelingId] = useState<string | null>(null);
+
+  const { data: openOrdersData } = useQuery<{ orders: OpenOrderView[] }>({
+    queryKey: ["openOrders"],
+    queryFn: async () => {
+      const res = await fetch("/api/orders");
+      if (!res.ok) return { orders: [] };
+      return res.json();
+    },
+    enabled: !!auth?.authenticated && showAdvanced,
+    refetchInterval: 30000,
+  });
+  const openOrders = openOrdersData?.orders ?? [];
+
+  const cancelMutation = useMutation({
+    mutationFn: async (orderId: string) => {
+      setCancelingId(orderId);
+      const res = await fetch("/api/orders", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ orderId }),
+      });
+      return res.json();
+    },
+    onSettled: () => {
+      setCancelingId(null);
+      queryClient.invalidateQueries({ queryKey: ["openOrders"] });
+      queryClient.invalidateQueries({ queryKey: ["portfolio"] });
+    },
+  });
+
+  // sellable = held shares minus shares locked in resting SELL orders for that token
+  const sellableFor = (p: Position) => {
+    const locked = openOrders
+      .filter((o) => o.tokenId === p.tokenId && o.side === "SELL")
+      .reduce((sum, o) => sum + (o.originalSize - o.sizeMatched), 0);
+    return Math.max(0, p.size - locked);
+  };
+
+  const openSell = (p: Position) => {
+    if (!auth?.authenticated) {
+      setPendingSellPosition(p);
+      setShowLoginModal(true);
+      return;
+    }
+    setSellPosition(p);
+  };
 
   const scanMutation = useMutation({
     mutationFn: async () => {
@@ -267,10 +319,30 @@ export default function Home() {
             {/* Polymarket Portfolio */}
             {portfolio?.positions && portfolio.positions.length > 0 && (
               <div className="flex-1 min-w-0">
-                <p className="text-xs text-muted-foreground uppercase tracking-wide mb-4">
-                  Polymarket Portfolio
-                </p>
+                <div className="flex items-center justify-between mb-4">
+                  <p className="text-xs text-muted-foreground uppercase tracking-wide">
+                    Polymarket Portfolio
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => setShowAdvanced((v) => !v)}
+                    className={`flex items-center gap-1 text-xs ${showAdvanced ? "text-primary" : "text-muted-foreground"} hover:text-primary`}
+                  >
+                    <Settings size={14} />
+                    Advanced
+                  </button>
+                </div>
                 <PositionsPieChart positions={portfolio.positions} />
+                {showAdvanced && (
+                  <PositionsTable
+                    positions={portfolio.positions}
+                    openOrders={openOrders}
+                    sellableFor={sellableFor}
+                    onSell={openSell}
+                    onCancel={(id) => cancelMutation.mutate(id)}
+                    cancelingId={cancelingId}
+                  />
+                )}
               </div>
             )}
 
@@ -569,12 +641,25 @@ export default function Home() {
         />
       )}
 
+      {sellPosition && (
+        <SellModal
+          position={sellPosition}
+          sellableSize={sellableFor(sellPosition)}
+          onClose={() => setSellPosition(null)}
+          onSuccess={() => {
+            queryClient.invalidateQueries({ queryKey: ["portfolio"] });
+            queryClient.invalidateQueries({ queryKey: ["openOrders"] });
+          }}
+        />
+      )}
+
       {showLoginModal && (
         <LoginModal
           onClose={() => {
             setShowLoginModal(false);
             setPendingTradeBracket(null);
             setPendingSkipBracket(null);
+            setPendingSellPosition(null);
           }}
           onSuccess={() => {
             refetchAuth();
@@ -587,6 +672,10 @@ export default function Home() {
               setSelectedBracket(pendingSkipBracket);
               setModalType("reject");
               setPendingSkipBracket(null);
+            }
+            if (pendingSellPosition) {
+              setSellPosition(pendingSellPosition);
+              setPendingSellPosition(null);
             }
           }}
         />
