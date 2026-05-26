@@ -8,7 +8,7 @@ import {
 import { Wallet } from "ethers";
 import { getConfig } from "./config";
 import { logger } from "./logger";
-import { Orderbook } from "./types";
+import { Orderbook, SellPreview } from "./types";
 
 let clobClient: ClobClient | null = null;
 
@@ -121,6 +121,35 @@ export function calculateExecutionPreview(
       : 0;
 
   return { shares, totalCost, avgPrice, apy, profit };
+}
+
+export function calculateSellPreview(
+  orderbook: Orderbook,
+  shares: number,
+  minPrice = 0,
+): SellPreview {
+  const bids = orderbook.bids
+    .map((b) => ({
+      price: Number.parseFloat(b.price),
+      size: Number.parseFloat(b.size),
+    }))
+    .filter((b) => b.price >= minPrice)
+    .sort((a, b) => b.price - a.price);
+
+  let fillableShares = 0;
+  let proceeds = 0;
+  let remaining = shares;
+
+  for (const bid of bids) {
+    if (remaining <= 0) break;
+    const fill = Math.min(remaining, bid.size);
+    fillableShares += fill;
+    proceeds += bid.price * fill;
+    remaining -= fill;
+  }
+
+  const avgPrice = fillableShares > 0 ? proceeds / fillableShares : 0;
+  return { fillableShares, proceeds, avgPrice };
 }
 
 export async function executeTrade(

@@ -51,3 +51,33 @@ export interface Trade {
   totalCost: number;
   executedAt: number;
 }
+
+export interface Position {
+  title: string;
+  image: string;
+  value: number;
+  outcome: string;
+  avgPrice: number;
+  curPrice: number;
+  tokenId: string;
+  size: number;
+  cashPnl: number;
+  percentPnl: number;
+  redeemable: boolean;
+}
+
+export interface SellPreview {
+  fillableShares: number;
+  proceeds: number;
+  avgPrice: number;
+}
+
+export interface OpenOrderView {
+  orderId: string;
+  tokenId: string;
+  side: string;
+  price: number;
+  originalSize: number;
+  sizeMatched: number;
+  outcome: string;
+}
