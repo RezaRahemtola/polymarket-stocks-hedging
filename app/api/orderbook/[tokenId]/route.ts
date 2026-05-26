@@ -1,5 +1,9 @@
 import { NextResponse } from "next/server";
-import { getOrderbook, calculateExecutionPreview } from "@/lib/trade-client";
+import {
+  getOrderbook,
+  calculateExecutionPreview,
+  calculateSellPreview,
+} from "@/lib/trade-client";
 
 export async function GET(
   request: Request,
@@ -17,6 +21,13 @@ export async function GET(
       { error: "Failed to fetch orderbook" },
       { status: 500 },
     );
+  }
+
+  if (url.searchParams.get("side") === "sell") {
+    const shares = parseFloat(url.searchParams.get("shares") || "0");
+    const minPrice = parseFloat(url.searchParams.get("minPrice") || "0");
+    const sellPreview = calculateSellPreview(orderbook, shares, minPrice);
+    return NextResponse.json({ orderbook, sellPreview });
   }
 
   const maxPrice = maxPriceParam ? parseFloat(maxPriceParam) : 1;

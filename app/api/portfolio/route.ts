@@ -12,6 +12,11 @@ interface PolymarketPosition {
   outcome?: string;
   avgPrice?: number;
   curPrice?: number;
+  asset?: string;
+  size?: number;
+  cashPnl?: number;
+  percentPnl?: number;
+  redeemable?: boolean;
 }
 
 export async function GET() {
@@ -62,6 +67,11 @@ export async function GET() {
       outcome: p.outcome || "",
       avgPrice: p.avgPrice || 0,
       curPrice: p.curPrice || 0,
+      tokenId: p.asset || "",
+      size: p.size || 0,
+      cashPnl: p.cashPnl || 0,
+      percentPnl: p.percentPnl || 0,
+      redeemable: p.redeemable || false,
     }));
 
     return NextResponse.json({
