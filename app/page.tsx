@@ -626,6 +626,17 @@ export default function Home() {
               ).event.ticker
             ] || 0
           }
+          balance={portfolio?.balance || 0}
+          existingShares={
+            portfolio?.positions?.find(
+              (p) => p.tokenId === selectedBracket.bracket.noTokenId,
+            )?.size || 0
+          }
+          existingAvgPrice={
+            portfolio?.positions?.find(
+              (p) => p.tokenId === selectedBracket.bracket.noTokenId,
+            )?.avgPrice || 0
+          }
           onClose={() => {
             setSelectedBracket(null);
             setModalType(null);

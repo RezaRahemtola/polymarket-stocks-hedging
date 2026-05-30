@@ -18,6 +18,9 @@ interface Props {
   ticker: string;
   currentStockPrice: number;
   userShares: number;
+  balance: number;
+  existingShares: number;
+  existingAvgPrice: number;
   onClose: () => void;
   onSuccess: () => void;
 }
@@ -28,6 +31,9 @@ export default function ApproveModal({
   ticker,
   currentStockPrice,
   userShares,
+  balance,
+  existingShares,
+  existingAvgPrice,
   onClose,
   onSuccess,
 }: Props) {
@@ -42,8 +48,14 @@ export default function ApproveModal({
     message: string;
   } | null>(null);
 
-  // Only refetch when maxPrice changes, or when user edits maxAmount
-  const effectiveMaxAmount = maxAmountEdited ? maxAmount : undefined;
+  // Only refetch when maxPrice changes, or when user edits maxAmount.
+  // When not edited, cap by available balance so the auto-filled amount is the
+  // min of what the balance and the orderbook allow.
+  const effectiveMaxAmount = maxAmountEdited
+    ? maxAmount
+    : balance > 0
+      ? String(balance)
+      : undefined;
 
   useEffect(() => {
     const fetchPreview = async () => {
@@ -149,7 +161,7 @@ export default function ApproveModal({
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <label className="text-sm text-muted-foreground">Max Price</label>
+              <label className="text-sm text-muted-foreground">Price</label>
               <Input
                 type="number"
                 step="0.01"
@@ -162,7 +174,7 @@ export default function ApproveModal({
             </div>
             <div className="space-y-2">
               <label className="text-sm text-muted-foreground">
-                Max Amount ($)
+                Amount ($)
               </label>
               <Input
                 type="number"
@@ -224,9 +236,14 @@ export default function ApproveModal({
                   {(() => {
                     const minStockGain =
                       userShares * (bracket.strikePrice - currentStockPrice);
+                    // Include the cost of NO shares already held in this market,
+                    // not just the shares about to be bought.
+                    const existingHedgeCost = existingShares * existingAvgPrice;
+                    const totalHedgeCost =
+                      existingHedgeCost + preview.totalCost;
                     const hedgeCostPct =
                       minStockGain > 0
-                        ? (preview.totalCost / minStockGain) * 100
+                        ? (totalHedgeCost / minStockGain) * 100
                         : 0;
                     return (
                       <div className="p-3 bg-secondary/50 rounded">
