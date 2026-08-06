@@ -10,37 +10,51 @@ import { getConfig } from "./config";
 import { logger } from "./logger";
 import { Orderbook, SellPreview, OpenOrderView } from "./types";
 
-let clobClient: ClobClient | null = null;
+let signer: Wallet | null = null;
+let apiCreds: {
+  key: string;
+  secret: string;
+  passphrase: string;
+} | null = null;
 
-async function getClobClient(): Promise<ClobClient> {
-  if (clobClient) return clobClient;
+function getSigner(): Wallet {
+  signer ??= new Wallet(getConfig().api.privateKey);
+  return signer;
+}
 
-  const config = getConfig();
-  const wallet = new Wallet(config.api.privateKey);
-  const host = config.api.clobApiUrl;
-  const chain = Chain.POLYGON;
+async function getApiCreds() {
+  if (apiCreds) return apiCreds;
 
   const rawCreds = await new ClobClient({
-    host,
-    chain,
-    signer: wallet,
+    host: getConfig().api.clobApiUrl,
+    chain: Chain.POLYGON,
+    signer: getSigner(),
   }).createOrDeriveApiKey();
-  const apiCreds = {
+
+  apiCreds = {
     key: rawCreds.key,
     secret: rawCreds.secret.replace(/-/g, "+").replace(/_/g, "/"),
     passphrase: rawCreds.passphrase,
   };
+  return apiCreds;
+}
 
-  clobClient = new ClobClient({
-    host,
-    chain,
-    signer: wallet,
-    creds: apiCreds,
+// A ClobClient caches each token's tick size, fee rate and neg-risk flag for its
+// own lifetime with no invalidation. Polymarket tightens a market's tick (0.01 ->
+// 0.001) as its price approaches 0 or 1, so a reused client keeps validating and
+// rounding prices against the stale grid: prices above 0.99 are rejected outright
+// and finer ones are rounded DOWN off the book, matching nothing. Build a fresh
+// client per call — only the derived API creds are worth keeping.
+async function getClobClient(): Promise<ClobClient> {
+  const config = getConfig();
+  return new ClobClient({
+    host: config.api.clobApiUrl,
+    chain: Chain.POLYGON,
+    signer: getSigner(),
+    creds: await getApiCreds(),
     signatureType: 2, // POLY_GNOSIS_SAFE
     funderAddress: config.api.funderAddress,
   });
-
-  return clobClient;
 }
 
 export async function getOrderbook(tokenId: string): Promise<Orderbook | null> {
