@@ -8,7 +8,7 @@ vi.mock("@polymarket/clob-client-v2", () => ({
   ClobClient: class {
     private cachedTick: string | null = null;
 
-    async createOrDeriveApiKey() {
+    async deriveApiKey() {
       return { key: "k", secret: "s", passphrase: "p" };
     }
 

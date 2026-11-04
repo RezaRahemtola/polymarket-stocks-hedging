@@ -14,7 +14,7 @@ services:
       - ${DATA_PATH:-./data}:/app/data
     restart: always
     healthcheck:
-      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000/api/auth"]
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:3000/api/auth"]
       interval: 10s
       timeout: 5s
       retries: 3

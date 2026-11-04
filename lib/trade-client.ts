@@ -25,11 +25,16 @@ function getSigner(): Wallet {
 async function getApiCreds() {
   if (apiCreds) return apiCreds;
 
-  const rawCreds = await new ClobClient({
+  const client = new ClobClient({
     host: getConfig().api.clobApiUrl,
     chain: Chain.POLYGON,
     signer: getSigner(),
-  }).createOrDeriveApiKey();
+  });
+  // Derive first: createOrDeriveApiKey() always tries create, which logs a 400
+  // once the key exists. Both SDK calls return an empty key on failure instead
+  // of throwing.
+  let rawCreds = await client.deriveApiKey();
+  if (!rawCreds.key) rawCreds = await client.createApiKey();
 
   apiCreds = {
     key: rawCreds.key,
