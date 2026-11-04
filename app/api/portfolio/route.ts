@@ -5,18 +5,37 @@ import { logger } from "@/lib/logger";
 import { getBalance } from "@/lib/trade-client";
 
 interface PolymarketPosition {
-  currentValue: number;
+  current_value: number;
   title?: string;
   icon?: string;
-  image?: string;
   outcome?: string;
-  avgPrice?: number;
-  curPrice?: number;
-  asset?: string;
-  size?: number;
-  cashPnl?: number;
-  percentPnl?: number;
+  avg_price?: number;
+  current_price?: number;
+  token_id?: string;
+  current_size?: number;
+  unrealized_pnl?: number;
+  percent_pnl?: number;
   redeemable?: boolean;
+}
+
+// Data API v2 serves one lifecycle status per call; held positions are OPEN plus REDEEMABLE.
+async function fetchPositions(
+  user: string,
+  status: "OPEN" | "REDEEMABLE",
+): Promise<PolymarketPosition[]> {
+  const res = await axios.get("https://data-api.polymarket.com/v2/positions", {
+    params: {
+      user,
+      status,
+      limit: 100,
+      filter_type: "TOKENS",
+      filter_amount: 0.1,
+      sort_by: "CURRENT_VALUE",
+      sort_direction: "DESC",
+    },
+    timeout: 10000,
+  });
+  return (res.data?.data || []) as PolymarketPosition[];
 }
 
 export async function GET() {
@@ -24,16 +43,10 @@ export async function GET() {
 
   try {
     const [positionsRes, balanceRes] = await Promise.allSettled([
-      axios.get("https://data-api.polymarket.com/positions", {
-        params: {
-          user: config.api.funderAddress,
-          limit: 100,
-          sizeThreshold: 0.1,
-          sortBy: "CURRENT",
-          sortDirection: "DESC",
-        },
-        timeout: 10000,
-      }),
+      Promise.all([
+        fetchPositions(config.api.funderAddress, "OPEN"),
+        fetchPositions(config.api.funderAddress, "REDEEMABLE"),
+      ]).then(([open, redeemable]) => [...open, ...redeemable]),
       getBalance(),
     ]);
 
@@ -47,30 +60,28 @@ export async function GET() {
     }
 
     const rawPositions =
-      positionsRes.status === "fulfilled"
-        ? ((positionsRes.value.data || []) as PolymarketPosition[])
-        : [];
+      positionsRes.status === "fulfilled" ? positionsRes.value : [];
     const balance = balanceRes.status === "fulfilled" ? balanceRes.value : 0;
 
     // Filter to only positions with actual value (not resolved/empty)
-    const positions = rawPositions.filter((p) => p.currentValue > 0.01);
+    const positions = rawPositions.filter((p) => p.current_value > 0.01);
     const totalValue = positions.reduce(
-      (sum, p) => sum + (p.currentValue || 0),
+      (sum, p) => sum + (p.current_value || 0),
       0,
     );
 
     // Group positions by market for pie chart
     const positionsByMarket = positions.map((p) => ({
       title: p.title || "Unknown",
-      image: p.icon || p.image || "",
-      value: p.currentValue || 0,
+      image: p.icon || "",
+      value: p.current_value || 0,
       outcome: p.outcome || "",
-      avgPrice: p.avgPrice || 0,
-      curPrice: p.curPrice || 0,
-      tokenId: p.asset || "",
-      size: p.size || 0,
-      cashPnl: p.cashPnl || 0,
-      percentPnl: p.percentPnl || 0,
+      avgPrice: p.avg_price || 0,
+      curPrice: p.current_price || 0,
+      tokenId: p.token_id || "",
+      size: p.current_size || 0,
+      cashPnl: p.unrealized_pnl || 0,
+      percentPnl: p.percent_pnl || 0,
       redeemable: p.redeemable || false,
     }));
 
